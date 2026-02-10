@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Upload Reviews - Law Firm Feedback Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+            color: white;
+            padding: 20px 0;
+        }
+        .navbar .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
+            padding: 8px 16px;
+            border-radius: 6px;
+        }
+        .navbar nav a:hover { background: rgba(255,255,255,0.1); }
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        .status-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-primary { background: #d1ecf1; color: #0c5460; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-danger { background: #f8d7da; color: #721c24; }
+        .upload-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+        }
+        h1 { color: #1e3a5f; margin-bottom: 20px; }
+        .file-input {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px dashed #3498db;
+            border-radius: 8px;
+            background: #f8f9fb;
+        }
+        input[type="file"] { width: 100%; padding: 10px; }
+        button {
+            width: 100%;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover { transform: translateY(-2px); }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-warning { background: #fff3cd; color: #856404; }
+        .alert-danger { background: #f8d7da; color: #721c24; }
+        .pricing-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .pricing-option {
+            padding: 15px;
+            background: #f8f9fb;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .pricing-option h3 { color: #1e3a5f; margin-bottom: 10px; }
+        .pricing-option a {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 20px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="container">
+            <h2>📊 Law Firm Feedback Report</h2>
+            <nav>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <!-- Account Status -->
+        <div class="status-card">
+            <h2>Your Account Status</h2>
+            <div class="status-badge badge-{{ account_status.badge_color }}">
+                {{ account_status.display }}
+            </div>
+        </div>
+        
+        {% if can_upload %}
+            <!-- Upload Form -->
+            <div class="upload-card">
+                <h1>Upload Client Reviews</h1>
+                <p>Upload your CSV file containing client reviews for analysis</p>
+                
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="file-input">
+                        <input type="file" name="file" accept=".csv" required>
+                    </div>
+                    <p style="color: #666; font-size: 0.9em;">
+                        CSV must contain columns: <strong>date, rating, review_text</strong>
+                    </p>
+                    <button type="submit">Generate Report</button>
+                </form>
+            </div>
+        {% else %}
+            <!-- No Reports Available -->
+            <div class="upload-card">
+                <h1>No Reports Remaining</h1>
+                <p style="margin-bottom: 30px;">Choose a plan to continue generating reports:</p>
+                
+                <div class="pricing-options">
+                    <div class="pricing-option">
+                        <h3>One-Time Report</h3>
+                        <p>$39 per report</p>
+                        <a href="{{ url_for('buy_one_time') }}">Buy Now</a>
+                    </div>
+                    <div class="pricing-option">
+                        <h3>Monthly Unlimited</h3>
+                        <p>$99/month</p>
+                        <a href="{{ url_for('subscribe') }}">Subscribe</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
