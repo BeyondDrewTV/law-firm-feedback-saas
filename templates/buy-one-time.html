@@ -1,54 +1,171 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Buy One-Time Report - $39</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buy Single Report - ${{ price }} | Law Firm Insights</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; }
-        .navbar { background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%); color: white; padding: 20px 0; }
-        .navbar .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
-        .navbar nav a { color: white; text-decoration: none; margin-left: 20px; padding: 8px 16px; border-radius: 6px; }
-        .container { max-width: 600px; margin: 60px auto; padding: 0 20px; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: linear-gradient(135deg, #f7fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .navbar {
+            background: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 40px;
+            border-radius: 12px;
+        }
+        .navbar .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar .logo {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #1a365d;
+            text-decoration: none;
+        }
+        .navbar nav a {
+            color: #1a365d;
+            text-decoration: none;
+            margin-left: 20px;
+            font-weight: 500;
+        }
+        .container { 
+            max-width: 700px; 
+            margin: 0 auto;
+        }
         .purchase-card {
             background: white;
-            padding: 50px;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            padding: 60px 50px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.12);
             text-align: center;
         }
-        h1 { color: #1e3a5f; margin-bottom: 20px; font-size: 2.5em; }
-        .price { font-size: 4em; color: #2c5282; font-weight: 700; margin: 30px 0; }
+        .plan-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 24px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+        }
+        h1 { 
+            color: #1a365d; 
+            margin-bottom: 15px; 
+            font-size: 2.5rem; 
+        }
+        .subtitle {
+            color: #666;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+        }
+        .price { 
+            font-size: 5rem; 
+            color: #667eea; 
+            font-weight: 800; 
+            margin: 30px 0;
+            line-height: 1;
+        }
+        .price-label {
+            color: #999;
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+        }
         .features {
             text-align: left;
-            margin: 30px 0;
-            padding: 30px;
-            background: #f8f9fb;
-            border-radius: 8px;
+            margin: 40px 0;
+            padding: 40px;
+            background: #f7fafc;
+            border-radius: 12px;
         }
-        .features li { padding: 10px 0; color: #555; }
-        .features li:before { content: "✓ "; color: #27ae60; font-weight: bold; }
+        .features h3 {
+            color: #1a365d;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+        .features ul {
+            list-style: none;
+            padding: 0;
+        }
+        .features li { 
+            padding: 12px 0; 
+            color: #555; 
+            font-size: 1.1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .features li:before { 
+            content: "✓"; 
+            color: #10b981; 
+            font-weight: bold; 
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
         button {
             width: 100%;
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 20px;
             border: none;
-            border-radius: 8px;
-            font-size: 1.2em;
-            font-weight: 600;
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 700;
             cursor: pointer;
-            margin-top: 20px;
+            margin-top: 30px;
+            transition: transform 0.2s, box-shadow 0.3s;
         }
-        button:hover { transform: translateY(-2px); }
-        .cancel-link { margin-top: 20px; }
-        .cancel-link a { color: #666; text-decoration: none; }
+        button:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+        }
+        .secure-note {
+            margin-top: 20px;
+            color: #666;
+            font-size: 0.95rem;
+        }
+        .secure-note svg {
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+        .cancel-link { 
+            margin-top: 25px; 
+        }
+        .cancel-link a { 
+            color: #667eea; 
+            text-decoration: none; 
+            font-weight: 600;
+        }
+        .cancel-link a:hover {
+            text-decoration: underline;
+        }
+        .alert { 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .alert-danger { background: #fee; color: #c33; border-left: 4px solid #c33; }
+        .alert-success { background: #efe; color: #2c7a3c; border-left: 4px solid #2c7a3c; }
     </style>
 </head>
 <body>
     <div class="navbar">
         <div class="container">
-            <h2>📊 Law Firm Feedback Report</h2>
+            <a href="{{ url_for('marketing_home') }}" class="logo">⚖️ Law Firm Insights</a>
             <nav>
                 <a href="{{ url_for('upload') }}">Dashboard</a>
                 <a href="{{ url_for('logout') }}">Logout</a>
@@ -57,24 +174,48 @@
     </div>
     
     <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
         <div class="purchase-card">
-            <h1>Buy One-Time Report</h1>
-            <div class="price">${{ price }}</div>
+            <div class="plan-badge">PAY AS YOU GO</div>
+            <h1>Buy Single Report</h1>
+            <p class="subtitle">Perfect for one-time analysis needs</p>
             
-            <ul class="features">
-                <li>Single report generation</li>
-                <li>Full theme analysis</li>
-                <li>PDF export included</li>
-                <li>No subscription needed</li>
-                <li>Buy multiple anytime</li>
-            </ul>
+            <div class="price">${{ price }}</div>
+            <div class="price-label">One-time payment • No subscription</div>
+            
+            <div class="features">
+                <h3>What is included</h3>
+                <ul>
+                    <li><strong>Single report generation</strong></li>
+                    <li>Analyze up to 500 client reviews</li>
+                    <li>Full theme analysis (10 legal-specific themes)</li>
+                    <li><strong>Implementation plans WITH step-by-step templates and timeline</strong></li>
+                    <li><strong>Branded PDF export</strong> for presentations</li>
+                    <li>Instant results - no waiting</li>
+                    <li>No subscription needed - buy more anytime</li>
+                </ul>
+            </div>
             
             <form method="POST" action="{{ url_for('create_onetime_checkout') }}">
-                <button type="submit">Purchase Now with Stripe</button>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit">
+                    🔒 Purchase Now with Stripe – ${{ price }}
+                </button>
             </form>
             
+            <p class="secure-note">
+                💳 Secure payment processed by Stripe • 30-day money-back guarantee
+            </p>
+            
             <div class="cancel-link">
-                <a href="{{ url_for('upload') }}">← Back to Dashboard</a>
+                <a href="{{ url_for('marketing_home') }}#pricing">← Back to Pricing</a>
             </div>
         </div>
     </div>

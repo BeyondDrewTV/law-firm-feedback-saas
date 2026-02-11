@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Law Firm Insights{% endblock %}
+
+{% block content %}
+<section class="dashboard-page">
+    <div class="container">
+        <div class="dashboard-header">
+            <div class="header-content">
+                <h1>Client Feedback Analysis Dashboard</h1>
+                <p class="header-subtitle">View insights and generate reports from client feedback</p>
+            </div>
+            <div class="dashboard-actions">
+                <a href="{{ url_for('upload') }}" class="btn btn-secondary">
+                    <span class="btn-icon">📤</span> Upload Reviews
+                </a>
+                {% if total_reviews > 0 %}
+                    <a href="{{ url_for('download_pdf') }}" class="btn btn-primary">
+                        <span class="btn-icon">📄</span> Download PDF Report
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Usage Notice for trial accounts #}
+        {% if reports_remaining is defined and reports_remaining is not none and not upgrade_needed %}
+        <div class="usage-notice">
+            <div class="usage-info">
+                <span class="usage-icon">📊</span>
+                <span class="usage-text">
+                    <strong>Free Trial:</strong> {{ reports_remaining }} report{% if reports_remaining != 1 %}s{% endif %} remaining in your trial
+                </span>
+            </div>
+            <a href="{{ url_for('pricing') }}" class="upgrade-link">Upgrade for unlimited →</a>
+        </div>
+        {% endif %}
+
+        {% if upgrade_needed %}
+            {# Upgrade Required Notice #}
+            <div class="upgrade-required-section">
+                <div class="upgrade-card">
+                    <div class="upgrade-icon">🔒</div>
+                    <h2>Trial Limit Reached</h2>
+                    <p class="upgrade-message">
+                        Your free trial report allowance has been fully used. Upgrade to a paid plan to unlock unlimited 
+                        reports and implementation strategies.
+                    </p>
+                    <div class="upgrade-benefits">
+                        <div class="benefit-item">✓ Unlimited reports per month</div>
+                        <div class="benefit-item">✓ Analyze unlimited reviews</div>
+                        <div class="benefit-item">✓ 90-day implementation plans</div>
+                        <div class="benefit-item">✓ Priority support</div>
+                    </div>
+                    <div class="upgrade-cta">
+                        <a href="{{ url_for('pricing') }}" class="btn btn-primary btn-large">View Pricing & Upgrade</a>
+                        <p class="upgrade-note">Flexible monthly and annual plans available.</p>
+                    </div>
+                </div>
+            </div>
+
+        {% elif total_reviews == 0 %}
+            {# Empty State #}
+            <div class="empty-state-section">
+                <div class="empty-state-card">
+                    <div class="empty-icon">📊</div>
+                    <h2>No Reviews Yet</h2>
+                    <p class="empty-message">
+                        Upload a CSV file with historical reviews or share the feedback form with clients to start analyzing.
+                    </p>
+                    <div class="empty-actions">
+                        <a href="{{ url_for('upload') }}" class="btn btn-primary btn-large">
+                            <span class="btn-icon">📤</span> Upload CSV File
+                        </a>
+                        <a href="{{ url_for('feedback_form') }}" class="btn btn-outline btn-large">
+                            <span class="btn-icon">💬</span> View Feedback Form
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        {% else %}
+            {# Summary Statistics #}
+            <div class="stats-section">
+                <h2 class="section-heading">Overview</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📝</div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ total_reviews }}</div>
+                            <div class="stat-label">Reviews Analyzed</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">★</div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ "%.2f"|format(avg_rating) }}</div>
+                            <div class="stat-label">Average Rating</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🔍</div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ themes|length }}</div>
+                            <div class="stat-label">Themes Identified</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+                                  {# Key Themes - NO SENTIMENT #}
+            {% if themes %}
+            <div class="themes-section" style="margin: 40px 0; padding: 30px; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.07);">
+                ...
+            </div>
+            {% else %}
+            <div class="themes-section" style="margin: 40px 0; padding: 30px; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.07);">
+                ...
+            </div>
+            {% endif %}
+
+            {# Top Positive Feedback #}
+            {% if top_praise %}
+            <div class="feedback-section positive-section">
+                <h2 class="section-heading">
+                    <span class="heading-icon success">✓</span>
+                    Top Positive Feedback
+                </h2>
+                <p class="section-description">
+                    Your highest-rated client experiences
+                </p>
+                <div class="reviews-list">
+                    {% for review in top_praise[:5] %}
+                    <div class="review-card positive">
+                        <div class="review-header">
+                            <span class="review-rating">
+                                {% for i in range(review.rating) %}★{% endfor %}
+                            </span>
+                            <span class="review-date">{{ review.date }}</span>
+                        </div>
+                        <div class="review-text">
+                            "{{ review.review_text[:300] }}{% if review.review_text|length > 300 %}...{% endif %}"
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {# Areas for Improvement #}
+            {% if top_complaints %}
+            <div class="feedback-section critical-section">
+                <h2 class="section-heading">
+                    <span class="heading-icon warning">⚠</span>
+                    Opportunities for Enhancement
+                </h2>
+                <p class="section-description">
+                    Feedback highlighting areas where clients experienced challenges
+                </p>
+                <div class="reviews-list">
+                    {% for review in top_complaints[:5] %}
+                    <div class="review-card negative">
+                        <div class="review-header">
+                            <span class="review-rating">
+                                {% for i in range(review.rating) %}★{% endfor %}
+                            </span>
+                            <span class="review-date">{{ review.date }}</span>
+                        </div>
+                        <div class="review-text">
+                            "{{ review.review_text[:300] }}{% if review.review_text|length > 300 %}...{% endif %}"
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {# Action CTA #}
+            <div class="action-cta-section">
+                <div class="action-cta-card">
+                    <h3>Ready to Generate Your Full Report?</h3>
+                    <p>Download a comprehensive PDF report with all insights, themes, and client feedback analysis.</p>
+                    <a href="{{ url_for('download_pdf') }}" class="btn btn-primary btn-large">
+                        <span class="btn-icon">📄</span> Generate PDF Report
+                    </a>
+                    {% if reports_remaining is defined and reports_remaining is not none %}
+                        <p class="cta-note">
+                            After this report, {{ reports_remaining - 1 }} trial report{{ (reports_remaining - 1) != 1 and 's' or '' }} will remain.
+                        </p>
+                    {% else %}
+                        <p class="cta-note">
+                            Your current plan allows you to generate additional reports at any time.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

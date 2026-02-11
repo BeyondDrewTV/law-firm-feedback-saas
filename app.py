@@ -1,787 +1,975 @@
+"""
+Law Firm Client Feedback Analysis - Flask Application
+Main application with routes for client feedback, admin CSV upload, analysis, and PDF generation
+"""
+
 import os
 import csv
-from io import StringIO, BytesIO
+from io import StringIO
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from collections import Counter
+
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    send_file,
+)
+from flask_login import (
+    LoginManager,
+    UserMixin,
+    login_user,
+    logout_user,
+    login_required,
+    current_user,
+)
+from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.exceptions import RequestEntityTooLarge
 import sqlite3
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
-from reportlab.lib.units import inch
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER
 import stripe
+
 from config import Config
+from pdf_generator import generate_pdf_report
 
 # Initialize Flask app
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Initialize Stripe
-stripe.api_key = app.config['STRIPE_SECRET_KEY']
+# Initialize CSRF protection
+csrf = CSRFProtect(app)
+
+# Configure Stripe
+stripe.api_key = app.config.get('STRIPE_SECRET_KEY')
 
 # Initialize Flask-Login
 login_manager = LoginManager()
+@login_manager.user_loader
+def load_user(user_id):
+    conn = sqlite3.connect(app.config['DATABASE_PATH'])
+    c = conn.cursor()
+    c.execute(
+        '''
+        SELECT
+            id,
+            username,
+            email,
+            firm_name,
+            is_admin,
+            stripe_customer_id,
+            stripe_subscription_id,
+            subscription_status,
+            trial_reviews_used,
+            trial_limit,
+            one_time_reports_purchased,
+            one_time_reports_used,
+            subscription_type,
+            trial_month,
+            trial_review_limit_per_report
+        FROM users
+        WHERE id = ?
+        ''',
+        (user_id,),
+    )
+    user_data = c.fetchone()
+    conn.close()
+
+    if user_data:
+        return User(
+            id=user_data[0],
+            username=user_data[1],
+            email=user_data[2],
+            firm_name=user_data[3],
+            is_admin=user_data[4],
+            stripe_customer_id=user_data[5],
+            stripe_subscription_id=user_data[6],
+            subscription_status=user_data[7],
+            trial_reviews_used=user_data[8],
+            trial_limit=user_data[9],
+            one_time_reports_purchased=user_data[10],
+            one_time_reports_used=user_data[11],
+            subscription_type=user_data[12],
+            trial_month=user_data[13],
+            trial_review_limit_per_report=user_data[14],
+        )
+    return None
+
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # ===== DATABASE INITIALIZATION =====
+
 def init_db():
-    """Initialize database with support for 3-tier pricing model"""
-    conn = sqlite3.connect('lawfirm_feedback.db')
+    """Initialize SQLite database with reviews and users tables."""
+    conn = sqlite3.connect(app.config['DATABASE_PATH'])
     c = conn.cursor()
-    
-    # Check existing columns
-    c.execute("PRAGMA table_info(users)")
-    columns = [column[1] for column in c.fetchall()]
-    
-    # Create users table
+
+    # Create reviews table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            rating INTEGER NOT NULL,
+            review_text TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # Create users table for admin auth + pricing / usage tracking
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE NOT NULL,
+            username TEXT UNIQUE,
+            email TEXT UNIQUE,
+            firm_name TEXT,
             password_hash TEXT NOT NULL,
-            firm_name TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            is_admin INTEGER DEFAULT 1,
+            trial_reports_used INTEGER DEFAULT 0,
+            trial_month TEXT,
+            trial_review_limit_per_report INTEGER DEFAULT 50,
             stripe_customer_id TEXT,
             stripe_subscription_id TEXT,
             subscription_status TEXT DEFAULT 'trial',
             trial_reviews_used INTEGER DEFAULT 0,
-            trial_limit INTEGER DEFAULT 10,
+            trial_limit INTEGER DEFAULT 3,
             one_time_reports_purchased INTEGER DEFAULT 0,
-            one_time_reports_used INTEGER DEFAULT 0
+            one_time_reports_used INTEGER DEFAULT 0,
+            subscription_type TEXT DEFAULT 'trial'
         )
     ''')
-    
-    # Add new columns if upgrading existing database
+
+    # Migration: ensure new pricing / Stripe columns exist on older databases
+    c.execute('PRAGMA table_info(users)')
+    columns = [col[1] for col in c.fetchall()]
+
+    # Core SaaS columns
+    if 'email' not in columns:
+        c.execute('ALTER TABLE users ADD COLUMN email TEXT')
+    if 'firm_name' not in columns:
+        c.execute('ALTER TABLE users ADD COLUMN firm_name TEXT')
+
+    # Stripe-related columns
+    if 'stripe_customer_id' not in columns:
+        c.execute('ALTER TABLE users ADD COLUMN stripe_customer_id TEXT')
+    if 'stripe_subscription_id' not in columns:
+        c.execute('ALTER TABLE users ADD COLUMN stripe_subscription_id TEXT')
+    if 'subscription_status' not in columns:
+        c.execute("ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT 'trial'")
+
+    # Trial and one-time report tracking
+    if 'trial_reviews_used' not in columns:
+        c.execute('ALTER TABLE users ADD COLUMN trial_reviews_used INTEGER DEFAULT 0')
+    if 'trial_limit' not in columns:
+        c.execute('ALTER TABLE users ADD COLUMN trial_limit INTEGER DEFAULT 3')
     if 'one_time_reports_purchased' not in columns:
-        try:
-            c.execute('ALTER TABLE users ADD COLUMN one_time_reports_purchased INTEGER DEFAULT 0')
-        except sqlite3.OperationalError:
-            pass
-    
+        c.execute('ALTER TABLE users ADD COLUMN one_time_reports_purchased INTEGER DEFAULT 0')
     if 'one_time_reports_used' not in columns:
-        try:
-            c.execute('ALTER TABLE users ADD COLUMN one_time_reports_used INTEGER DEFAULT 0')
-        except sqlite3.OperationalError:
-            pass
-    
-    # Create reports table
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS reports (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            review_count INTEGER,
-            avg_rating REAL,
-            report_type TEXT DEFAULT 'trial',
-            FOREIGN KEY (user_id) REFERENCES users (id)
+        c.execute('ALTER TABLE users ADD COLUMN one_time_reports_used INTEGER DEFAULT 0')
+    if 'subscription_type' not in columns:
+        c.execute("ALTER TABLE users ADD COLUMN subscription_type TEXT DEFAULT 'trial'")
+
+    # Align any legacy trial_limit of 10 down to 3, per instructions
+    c.execute('UPDATE users SET trial_limit = 3 WHERE trial_limit = 10 OR trial_limit IS NULL')
+
+    # Create default admin user if not exists
+    c.execute('SELECT id FROM users WHERE username = ?', (app.config['ADMIN_USERNAME'],))
+    if not c.fetchone():
+        password_hash = generate_password_hash(app.config['ADMIN_PASSWORD'])
+        c.execute(
+            'INSERT INTO users (username, password_hash) VALUES (?, ?)',
+            (app.config['ADMIN_USERNAME'], password_hash)
         )
-    ''')
-    
+
+    # Ensure default admin has reasonable SaaS fields populated
+    c.execute(
+        '''
+        UPDATE users
+        SET email = COALESCE(email, ?),
+            firm_name = COALESCE(firm_name, ?),
+            trial_limit = COALESCE(trial_limit, ?),
+            subscription_status = COALESCE(subscription_status, 'trial'),
+            subscription_type = COALESCE(subscription_type, 'trial')
+        WHERE username = ?
+        ''',
+        (
+            f"{app.config['ADMIN_USERNAME']}@example.com",
+            app.config['FIRM_NAME'],
+            app.config['FREE_TRIAL_LIMIT'],
+            app.config['ADMIN_USERNAME'],
+        ),
+    )
+
     conn.commit()
     conn.close()
 
-# ===== USER CLASS WITH 3-TIER PRICING LOGIC =====
+# ===== USER CLASS FOR FLASK-LOGIN =====
+
 class User(UserMixin):
-    """User model with 3-tier pricing support"""
-    def __init__(self, id, email, firm_name, stripe_customer_id=None, 
-                 stripe_subscription_id=None, subscription_status='trial',
-                 trial_reviews_used=0, trial_limit=10,
-                 one_time_reports_purchased=0, one_time_reports_used=0):
+    def __init__(
+        self,
+        id,
+        username,
+        is_admin=True,
+        email=None,
+        firm_name=None,
+        stripe_customer_id=None,
+        stripe_subscription_id=None,
+        subscription_status='trial',
+        trial_reviews_used=0,
+        trial_limit=None,
+        one_time_reports_purchased=0,
+        one_time_reports_used=0,
+        subscription_type='trial',
+        trial_month=None,
+        trial_review_limit_per_report=50,
+    ):
         self.id = id
+        self.username = username
+        self.is_admin = bool(is_admin)
+        # SaaS identity fields
         self.email = email
-        self.firm_name = firm_name
+        self.firm_name = firm_name or app.config['FIRM_NAME']
+
+        # Stripe subscription + customer fields
         self.stripe_customer_id = stripe_customer_id
         self.stripe_subscription_id = stripe_subscription_id
-        self.subscription_status = subscription_status
-        self.trial_reviews_used = trial_reviews_used
-        self.trial_limit = trial_limit
-        self.one_time_reports_purchased = one_time_reports_purchased
-        self.one_time_reports_used = one_time_reports_used
-    
+        self.subscription_status = subscription_status or 'trial'
+        self.subscription_type = subscription_type or 'trial'
+
+        # Usage tracking
+        self.trial_reviews_used = trial_reviews_used or 0
+        self.trial_limit = trial_limit or app.config['FREE_TRIAL_LIMIT']
+        self.one_time_reports_purchased = one_time_reports_purchased or 0
+        self.one_time_reports_used = one_time_reports_used or 0
+
+        # Legacy fields (kept for compatibility, not used in new logic)
+        self.trial_month = trial_month
+        self.trial_review_limit_per_report = trial_review_limit_per_report or 50
+
+    # ===== PRICING / ACCOUNT HELPERS =====
+
     def has_active_subscription(self):
-        """Check if user has active $99/month subscription"""
+        """Return True if the user has an active Stripe subscription."""
         return self.subscription_status == 'active'
-    
+
     def has_unused_one_time_reports(self):
-        """Check if user has unused $39 one-time reports"""
         return self.one_time_reports_purchased > self.one_time_reports_used
-    
+
     def get_remaining_one_time_reports(self):
-        """Get number of remaining one-time reports"""
         return max(0, self.one_time_reports_purchased - self.one_time_reports_used)
-    
+
     def is_trial_expired(self):
-        """Check if free trial is expired"""
         return self.trial_reviews_used >= self.trial_limit
-    
-    def get_remaining_trial_reports(self):
-        """Get number of remaining trial reports"""
-        return max(0, self.trial_limit - self.trial_reviews_used)
-    
+
     def can_generate_report(self):
         """
-        Check if user can generate a report (3-tier logic):
-        1. Active subscription ($99/month) → unlimited
-        2. Unused one-time reports ($39 each) → use one
-        3. Trial not expired (10 free) → use one
+        Tiered logic:
+        Priority: subscription → one-time → trial
         """
-        return (self.has_active_subscription() or 
-                self.has_unused_one_time_reports() or 
-                not self.is_trial_expired())
-    
+        return (
+            self.has_active_subscription()
+            or self.has_unused_one_time_reports()
+            or not self.is_trial_expired()
+        )
+
     def get_account_status(self):
-        """Get user's current account status for display"""
+        """Return a dict describing the current account status for UI."""
         if self.has_active_subscription():
             return {
-                'type': 'subscription',
-                'display': 'Unlimited Reports (Monthly Subscription)',
+                'type': self.subscription_type,
+                'display': f'Unlimited ({self.subscription_type.title()} Subscription)',
                 'remaining': None,
-                'badge_color': 'success'
             }
         elif self.has_unused_one_time_reports():
             remaining = self.get_remaining_one_time_reports()
             return {
-                'type': 'one_time',
+                'type': 'onetime',
                 'display': f'One-Time Reports: {remaining} remaining',
                 'remaining': remaining,
-                'badge_color': 'primary'
             }
         else:
-            remaining = self.get_remaining_trial_reports()
+            remaining = max(0, self.trial_limit - self.trial_reviews_used)
             return {
                 'type': 'trial',
                 'display': f'Free Trial: {remaining}/{self.trial_limit} remaining',
                 'remaining': remaining,
-                'badge_color': 'warning' if remaining > 0 else 'danger'
+                'trial_limit': self.trial_limit,
             }
 
-@login_manager.user_loader
-def load_user(user_id):
-    """Load user from database"""
-    conn = sqlite3.connect('lawfirm_feedback.db')
+# ===== ANALYSIS FUNCTIONS =====
+
+def analyze_reviews():
+    """
+    Analyze reviews in the database.
+    For free trial users: cap analysis at 50 reviews.
+    For paid users: analyze all reviews.
+    Returns dict with stats, themes, top praise, and top complaints.
+    """
+    conn = sqlite3.connect(app.config['DATABASE_PATH'])
     c = conn.cursor()
-    c.execute('''SELECT id, email, firm_name, stripe_customer_id, stripe_subscription_id, 
-                 subscription_status, trial_reviews_used, trial_limit,
-                 one_time_reports_purchased, one_time_reports_used 
-                 FROM users WHERE id = ?''', (user_id,))
-    user_data = c.fetchone()
+    c.execute('SELECT date, rating, review_text FROM reviews ORDER BY created_at DESC')
+    reviews = [
+        {'date': row[0], 'rating': row[1], 'review_text': row[2]}
+        for row in c.fetchall()
+    ]
     conn.close()
-    
-    if user_data:
-        return User(*user_data)
-    return None
 
-# ===== THEME ANALYSIS (Unchanged) =====
-THEMES = {
-    'Communication': ['communication', 'responsive', 'returned calls', 'kept me informed', 'updates', 
-                     'contact', 'reachable', 'available', 'prompt', 'timely'],
-    'Professionalism': ['professional', 'courteous', 'respectful', 'polite', 'demeanor', 
-                       'conduct', 'manner', 'appropriate', 'ethical'],
-    'Legal Expertise': ['knowledgeable', 'experienced', 'expert', 'skilled', 'competent', 
-                       'qualified', 'expertise', 'understanding of law', 'legal knowledge'],
-    'Case Outcome': ['won', 'successful', 'settlement', 'verdict', 'result', 'outcome', 
-                    'resolved', 'dismissed', 'favorable'],
-    'Cost/Value': ['expensive', 'affordable', 'fees', 'billing', 'cost', 'worth it', 
-                  'value', 'money', 'price', 'rates'],
-    'Staff/Support': ['staff', 'assistant', 'paralegal', 'secretary', 'team', 'office', 
-                     'support staff', 'helpful staff'],
-    'Responsiveness': ['quick', 'slow', 'delayed', 'waiting', 'took forever', 'immediately', 
-                      'right away', 'promptly'],
-    'Compassion': ['caring', 'understanding', 'empathetic', 'compassionate', 'listened', 
-                  'sympathetic', 'supportive'],
-    'Clarity': ['explained', 'clear', 'confusing', 'understood', 'guidance', 'direction', 
-               'straightforward', 'complicated'],
-    'Recommendation': ['recommend', 'refer', 'hire again', 'use again', 'best lawyer', 
-                      'highly recommend', 'would not recommend']
-}
+    if not reviews:
+        return {
+            'total_reviews': 0,
+            'avg_rating': 0,
+            'themes': {},
+            'top_praise': [],
+            'top_complaints': [],
+            'all_reviews': []
+        }
 
-def analyze_reviews(reviews):
-    """Analyze reviews and extract themes"""
-    total_reviews = len(reviews)
-    ratings = [float(r['rating']) for r in reviews if r['rating']]
-    avg_rating = sum(ratings) / len(ratings) if ratings else 0
-    
-    theme_counts = {theme: 0 for theme in THEMES}
-    theme_examples = {theme: [] for theme in THEMES}
-    
-    for review in reviews:
-        text = review['review_text'].lower()
-        for theme, keywords in THEMES.items():
-            for keyword in keywords:
-                if keyword in text:
-                    theme_counts[theme] += 1
-                    if len(theme_examples[theme]) < 3:
-                        theme_examples[theme].append(review['review_text'][:200])
-                    break
-    
-    sorted_themes = sorted(theme_counts.items(), key=lambda x: x[1], reverse=True)
-    low_rating_reviews = [r for r in reviews if float(r['rating']) <= 3]
-    high_rating_reviews = [r for r in reviews if float(r['rating']) >= 4]
-    
+    # Apply per-plan analysis cap: free trial = first 50 reviews only
+    analysis_reviews = reviews
+    if not current_user.is_anonymous:
+        if not current_user.has_active_subscription() and not current_user.has_unused_one_time_reports():
+            # Free trial: cap analysis at 50 reviews
+            analysis_reviews = reviews[:50]
+
+    total_reviews = len(analysis_reviews)
+    avg_rating = sum(r['rating'] for r in analysis_reviews) / total_reviews
+
+    theme_keywords = {
+        'Communication': ['communication', 'responsive', 'returned calls', 'kept me informed', 'updates', 'contact'],
+        'Professionalism': ['professional', 'courteous', 'respectful', 'polite', 'demeanor', 'ethical'],
+        'Legal Expertise': ['knowledgeable', 'experienced', 'expert', 'skilled', 'competent', 'expertise'],
+        'Case Outcome': ['won', 'successful', 'settlement', 'verdict', 'result', 'outcome', 'resolved'],
+        'Cost/Value': ['expensive', 'affordable', 'fees', 'billing', 'cost', 'worth it', 'value', 'price'],
+        'Responsiveness': ['quick', 'slow', 'delayed', 'waiting', 'timely', 'immediately', 'promptly'],
+        'Compassion': ['caring', 'understanding', 'empathetic', 'compassionate', 'listened', 'supportive'],
+        'Staff Support': ['staff', 'assistant', 'paralegal', 'secretary', 'team', 'office'],
+    }
+
+    theme_counts = Counter()
+    for review in analysis_reviews:
+        text_lower = review['review_text'].lower()
+        for theme, keywords in theme_keywords.items():
+            if any(keyword in text_lower for keyword in keywords):
+                theme_counts[theme] += 1
+
+    top_praise = [r for r in analysis_reviews if r['rating'] >= 4][:10]
+    top_complaints = [r for r in analysis_reviews if r['rating'] <= 2][:10]
+
     return {
         'total_reviews': total_reviews,
         'avg_rating': round(avg_rating, 2),
-        'theme_counts': dict(sorted_themes),
-        'theme_examples': theme_examples,
-        'top_complaints': low_rating_reviews[:5],
-        'top_praise': high_rating_reviews[:5],
-        'sorted_themes': sorted_themes[:5]
+        'themes': dict(theme_counts.most_common(8)),
+        'top_praise': top_praise,
+        'top_complaints': top_complaints,
+        'all_reviews': reviews  # keep full set for reference
     }
 
-def generate_pdf_report(results, firm_name):
-    """Generate PDF report"""
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
-    story = []
-    styles = getSampleStyleSheet()
-    
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=24,
-        textColor=colors.HexColor('#1a365d'),
-        spaceAfter=30,
-        alignment=TA_CENTER
-    )
-    
-    heading_style = ParagraphStyle(
-        'CustomHeading',
-        parent=styles['Heading2'],
-        fontSize=16,
-        textColor=colors.HexColor('#2c5282'),
-        spaceAfter=12,
-        spaceBefore=12
-    )
-    
-    story.append(Paragraph(f"Client Feedback Report - {firm_name}", title_style))
-    story.append(Spacer(1, 0.3*inch))
-    
-    story.append(Paragraph("Executive Summary", heading_style))
-    overview_data = [
-        ['Total Reviews', str(results['total_reviews'])],
-        ['Average Rating', f"{results['avg_rating']}/5.0"],
-        ['Report Generated', datetime.now().strftime('%B %d, %Y')]
-    ]
-    overview_table = Table(overview_data, colWidths=[3*inch, 3*inch])
-    overview_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f7fafc')),
-        ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#2d3748')),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), 12),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-        ('TOPPADDING', (0, 0), (-1, -1), 12),
-        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e2e8f0'))
-    ]))
-    story.append(overview_table)
-    story.append(Spacer(1, 0.3*inch))
-    
-    story.append(Paragraph("Top Discussion Themes", heading_style))
-    theme_data = [['Theme', 'Mentions']]
-    for theme, count in results['sorted_themes']:
-        theme_data.append([theme, str(count)])
-    
-    theme_table = Table(theme_data, colWidths=[4*inch, 2*inch])
-    theme_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c5282')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 12),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
-        ('TOPPADDING', (0, 0), (-1, -1), 10),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f7fafc')),
-        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e2e8f0'))
-    ]))
-    story.append(theme_table)
-    story.append(Spacer(1, 0.3*inch))
-    
-    if results['top_praise']:
-        story.append(Paragraph("Top Positive Feedback", heading_style))
-        for i, review in enumerate(results['top_praise'][:3], 1):
-            story.append(Paragraph(f"<b>Review {i}:</b> {review['review_text'][:300]}...", styles['Normal']))
-            story.append(Spacer(1, 0.1*inch))
-    
-    if results['top_complaints']:
-        story.append(PageBreak())
-        story.append(Paragraph("Areas for Improvement", heading_style))
-        for i, review in enumerate(results['top_complaints'][:3], 1):
-            story.append(Paragraph(f"<b>Review {i}:</b> {review['review_text'][:300]}...", styles['Normal']))
-            story.append(Spacer(1, 0.1*inch))
-    
-    doc.build(story)
-    buffer.seek(0)
-    return buffer
+# ===== PUBLIC / MARKETING ROUTES =====
 
-# ===== ROUTES =====
+@app.route("/")
+def marketing_home():
+    """Marketing landing page"""
+    return render_template("marketing_home.html")
 
-@app.route('/')
+@app.route("/how-it-works")
+def how_it_works():
+    return render_template("how_it_works.html")
+
+@app.route("/features")
+def features():
+    return render_template("features.html")
+
+@app.route("/case-studies")
+def case_studies():
+    return render_template("case_studies.html")
+
+@app.route("/pricing")
+def pricing():
+    return render_template(
+        "pricing.html",
+        trial_limit=app.config['FREE_TRIAL_LIMIT'],
+        onetime_price=app.config['ONETIME_REPORT_PRICE'],
+        monthly_price=app.config['MONTHLY_SUBSCRIPTION_PRICE'],
+        annual_price=app.config['ANNUAL_SUBSCRIPTION_PRICE'],
+    )
+
+@app.route("/privacy")
+def privacy():
+    """Privacy policy page"""
+    return render_template("privacy.html")
+
+@app.route("/terms")
+def terms():
+    """Terms of service page"""
+    return render_template("terms.html")
+
+@app.route("/security")
+def security():
+    """Security page"""
+    return render_template("security.html")
+
+@app.route("/app")
 def index():
-    """Homepage with 3-tier pricing"""
-    return render_template('index.html',
-                         trial_limit=app.config['FREE_TRIAL_LIMIT'],
-                         onetime_price=app.config['ONETIME_REPORT_PRICE'],
-                         monthly_price=app.config['MONTHLY_SUBSCRIPTION_PRICE'])
+    """App landing page."""
+    return render_template(
+        "index.html",
+        trial_limit=app.config['FREE_TRIAL_LIMIT'],
+        onetime_price=app.config['ONETIME_REPORT_PRICE'],
+        monthly_price=app.config['MONTHLY_SUBSCRIPTION_PRICE'],
+        annual_price=app.config['ANNUAL_SUBSCRIPTION_PRICE'],
+    )
+
+# ===== CLIENT FEEDBACK ROUTES =====
+
+@app.route('/feedback', methods=['GET', 'POST'])
+def feedback_form():
+    """Client feedback submission form"""
+    if request.method == 'POST':
+        date = request.form.get('date') or datetime.now().strftime('%Y-%m-%d')
+        rating = request.form.get('rating')
+        review_text = request.form.get('review_text')
+
+        if not rating or not review_text:
+            flash('Please provide a rating and review text.', 'danger')
+            return redirect(url_for('feedback_form'))
+
+        try:
+            rating = int(rating)
+            if rating < 1 or rating > 5:
+                raise ValueError
+        except ValueError:
+            flash('Rating must be between 1 and 5.', 'danger')
+            return redirect(url_for('feedback_form'))
+
+        conn = sqlite3.connect(app.config['DATABASE_PATH'])
+        c = conn.cursor()
+        c.execute(
+            'INSERT INTO reviews (date, rating, review_text) VALUES (?, ?, ?)',
+            (date, rating, review_text)
+        )
+        conn.commit()
+        conn.close()
+
+        flash('Thank you for your feedback!', 'success')
+        return redirect(url_for('thank_you'))
+
+    return render_template('feedback_form.html')
+
+@app.route('/thank-you')
+def thank_you():
+    """Thank you page after feedback submission"""
+    return render_template('thank_you.html')
+
+# ===== ADMIN AUTH ROUTES =====
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    """User registration"""
+    """Self-service registration for new firms (free trial)."""
+    if current_user.is_authenticated:
+        return redirect(url_for('upload'))
+
     if request.method == 'POST':
+        firm_name = request.form.get('firm_name') or app.config['FIRM_NAME']
         email = request.form.get('email')
         password = request.form.get('password')
-        firm_name = request.form.get('firm_name')
-        
-        if not all([email, password, firm_name]):
-            flash('All fields are required', 'danger')
+
+        if not email or not password:
+            flash('Email and password are required.', 'danger')
             return redirect(url_for('register'))
-        
-        conn = sqlite3.connect('lawfirm_feedback.db')
+
+        conn = sqlite3.connect(app.config['DATABASE_PATH'])
         c = conn.cursor()
-        
-        c.execute('SELECT id FROM users WHERE email = ?', (email,))
-        if c.fetchone():
-            flash('Email already registered', 'danger')
+
+        # Use email as username for SaaS users
+        c.execute(
+            'SELECT id FROM users WHERE email = ? OR username = ?',
+            (email, email),
+        )
+        existing = c.fetchone()
+        if existing:
             conn.close()
+            flash('An account with that email already exists. Please log in.', 'warning')
             return redirect(url_for('login'))
-        
+
         password_hash = generate_password_hash(password)
-        c.execute('''INSERT INTO users (email, password_hash, firm_name) 
-                    VALUES (?, ?, ?)''', (email, password_hash, firm_name))
+        c.execute(
+            '''
+            INSERT INTO users (
+                username,
+                email,
+                firm_name,
+                password_hash,
+                is_admin,
+                trial_reviews_used,
+                trial_limit,
+                subscription_status,
+                subscription_type
+            )
+            VALUES (?, ?, ?, ?, 0, 0, ?, 'trial', 'trial')
+            ''',
+            (
+                email,
+                email,
+                firm_name,
+                password_hash,
+                app.config['FREE_TRIAL_LIMIT'],
+            ),
+        )
+        user_id = c.lastrowid
         conn.commit()
         conn.close()
-        
-        flash('Registration successful! Please log in.', 'success')
-        return redirect(url_for('login'))
-    
+
+        user = User(
+            id=user_id,
+            username=email,
+            email=email,
+            firm_name=firm_name,
+            is_admin=False,
+            subscription_status='trial',
+            trial_reviews_used=0,
+            trial_limit=app.config['FREE_TRIAL_LIMIT'],
+            one_time_reports_purchased=0,
+            one_time_reports_used=0,
+            subscription_type='trial',
+        )
+        login_user(user)
+        flash('Account created. Welcome to your free trial!', 'success')
+        return redirect(url_for('upload'))
+
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """User login"""
+    """Login page for firm administrators and trial accounts."""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+
     if request.method == 'POST':
-        email = request.form.get('email')
+        # Identifier may be email address or legacy username
+        identifier = request.form.get('username')
         password = request.form.get('password')
-        
-        conn = sqlite3.connect('lawfirm_feedback.db')
+
+        conn = sqlite3.connect(app.config['DATABASE_PATH'])
         c = conn.cursor()
-        c.execute('''SELECT id, email, firm_name, stripe_customer_id, 
-                     stripe_subscription_id, subscription_status, trial_reviews_used, trial_limit,
-                     one_time_reports_purchased, one_time_reports_used
-                     FROM users WHERE email = ?''', (email,))
+        c.execute(
+            'SELECT id, password_hash FROM users WHERE email = ? OR username = ?',
+            (identifier, identifier),
+        )
         user_data = c.fetchone()
         conn.close()
-        
-        if user_data:
-            # Get password hash separately
-            conn = sqlite3.connect('lawfirm_feedback.db')
-            c = conn.cursor()
-            c.execute('SELECT password_hash FROM users WHERE email = ?', (email,))
-            password_hash = c.fetchone()[0]
-            conn.close()
-            
-            if check_password_hash(password_hash, password):
-                user = User(*user_data)
+
+        if user_data and check_password_hash(user_data[1], password):
+            # Load full user record via the user loader for consistency
+            user = load_user(user_data[0])
+            if user:
                 login_user(user)
-                flash(f'Welcome back, {user.firm_name}!', 'success')
-                return redirect(url_for('upload'))
-        
-        flash('Invalid email or password', 'danger')
-    
+                flash('You are now signed in.', 'success')
+                return redirect(url_for('dashboard'))
+
+        flash('Invalid email address or password.', 'danger')
+        return redirect(url_for('login'))
+
     return render_template('login.html')
 
 @app.route('/logout')
 @login_required
 def logout():
-    """User logout"""
+    """Admin logout"""
     logout_user()
-    flash('Logged out successfully', 'info')
-    return redirect(url_for('index'))
+    flash('You have been signed out.', 'info')
+    return redirect(url_for('marketing_home'))
 
-@app.route('/upload', methods=['GET', 'POST'])
+# ===== ADMIN ROUTES =====
+
+@app.route('/dashboard')
 @login_required
-def upload():
-    """
-    CSV upload with 3-tier usage logic:
-    1. Check if user can generate report
-    2. Process CSV
-    3. Decrement appropriate counter
-    """
-    if request.method == 'POST':
-        # Check if user can generate report
-        if not current_user.can_generate_report():
-            flash('You have no reports remaining. Please purchase more.', 'warning')
-            return redirect(url_for('index'))
-        
-        if 'file' not in request.files:
-            flash('No file uploaded', 'danger')
-            return redirect(request.url)
-        
-        file = request.files['file']
-        if file.filename == '':
-            flash('No file selected', 'danger')
-            return redirect(request.url)
-        
-        if not file.filename.endswith('.csv'):
-            flash('Please upload a CSV file', 'danger')
-            return redirect(request.url)
-        
-        try:
-            csv_content = file.read().decode('utf-8')
-            csv_file = StringIO(csv_content)
-            reader = csv.DictReader(csv_file)
-            
-            reviews = []
-            for row in reader:
-                if 'date' in row and 'rating' in row and 'review_text' in row:
-                    reviews.append(row)
-            
-            if not reviews:
-                flash('CSV must contain columns: date, rating, review_text', 'danger')
-                return redirect(request.url)
-            
-            # Analyze reviews
-            results = analyze_reviews(reviews)
-            
-            # Determine report type and update counters
-            conn = sqlite3.connect('lawfirm_feedback.db')
-            c = conn.cursor()
-            
-            if current_user.has_active_subscription():
-                report_type = 'subscription'
-            elif current_user.has_unused_one_time_reports():
-                report_type = 'one_time'
-                c.execute('''UPDATE users SET one_time_reports_used = one_time_reports_used + 1 
-                            WHERE id = ?''', (current_user.id,))
-                current_user.one_time_reports_used += 1
-            else:
-                report_type = 'trial'
-                c.execute('''UPDATE users SET trial_reviews_used = trial_reviews_used + 1 
-                            WHERE id = ?''', (current_user.id,))
-                current_user.trial_reviews_used += 1
-            
-            # Save report
-            c.execute('''INSERT INTO reports (user_id, review_count, avg_rating, report_type)
-                        VALUES (?, ?, ?, ?)''',
-                     (current_user.id, results['total_reviews'], results['avg_rating'], report_type))
-            
-            conn.commit()
-            conn.close()
-            
-            session['report_data'] = results
-            flash(f'Report generated successfully!', 'success')
-            return redirect(url_for('report'))
-            
-        except Exception as e:
-            flash(f'Error processing file: {str(e)}', 'danger')
-            return redirect(request.url)
-    
-    # GET - show upload form with status
-    status = current_user.get_account_status()
-    return render_template('upload.html', 
-                         account_status=status,
-                         can_upload=current_user.can_generate_report())
+def dashboard():
+    """Admin dashboard with overview and account status."""
+    analysis = analyze_reviews()
+    account_status = current_user.get_account_status()
 
-@app.route('/report')
-@login_required
-def report():
-    """Display generated report"""
-    results = session.get('report_data')
-    if not results:
-        flash('No report data available', 'warning')
-        return redirect(url_for('upload'))
-    
-    return render_template('report.html', results=results)
+    # For backward-compatible UI hints on the dashboard template
+    reports_remaining = (
+        account_status.get('remaining')
+        if account_status.get('type') == 'trial'
+        else None
+    )
+    upgrade_needed = account_status.get('type') == 'trial' and account_status.get('remaining') == 0
+    limited = account_status.get('type') == 'trial'
 
-@app.route('/download_pdf')
-@login_required
-def download_pdf():
-    """Download PDF report"""
-    results = session.get('report_data')
-    if not results:
-        flash('No report data available', 'warning')
-        return redirect(url_for('upload'))
-    
-    pdf_file = generate_pdf_report(results, current_user.firm_name)
-    return send_file(pdf_file, as_attachment=True, download_name='feedback_report.pdf')
+    # Convert themes dict to list of dicts for UI (name, mentions, percentage)
+    themes_dict = analysis['themes']
+    total_mentions = sum(themes_dict.values()) or 1
+    dashboard_themes = [
+        {
+            'name': name,
+            'mentions': int(mentions),
+            'percentage': (int(mentions) / total_mentions) * 100.0,
+        }
+        for name, mentions in themes_dict.items()
+    ]
 
-# ===== ONE-TIME PURCHASE ($39) =====
+    return render_template(
+        'report_results.html',
+        total_reviews=analysis['total_reviews'],
+        avg_rating=analysis['avg_rating'],
+        themes=dashboard_themes,
+        top_praise=analysis['top_praise'],
+        top_complaints=analysis['top_complaints'],
+        account_status=account_status,
+        reports_remaining=reports_remaining,
+        upgrade_needed=upgrade_needed,
+        limited=limited,
+    )
+
+# ===== STRIPE PRICING ROUTES =====
 
 @app.route('/buy-one-time')
 @login_required
 def buy_one_time():
-    """Purchase $39 one-time report"""
-    return render_template('buy-one-time.html',
-                         price=app.config['ONETIME_REPORT_PRICE'],
-                         stripe_publishable_key=app.config['STRIPE_PUBLISHABLE_KEY'])
+    """One-time report purchase page."""
+    return render_template(
+        'buy-one-time.html',
+        price=app.config['ONETIME_REPORT_PRICE'],
+        stripe_publishable_key=app.config['STRIPE_PUBLISHABLE_KEY'],
+    )
 
 @app.route('/create-onetime-checkout', methods=['POST'])
 @login_required
 def create_onetime_checkout():
-    """Create Stripe Checkout for $39 one-time payment"""
+    """Create Stripe Checkout session for one-time report purchase."""
     try:
-        # Create/get Stripe customer
+        # Ensure Stripe customer exists
         if not current_user.stripe_customer_id:
             customer = stripe.Customer.create(
-                email=current_user.email,
-                metadata={'user_id': current_user.id, 'firm_name': current_user.firm_name}
+                email=current_user.email or current_user.username,
+                metadata={'user_id': current_user.id},
             )
-            
-            conn = sqlite3.connect('lawfirm_feedback.db')
+            conn = sqlite3.connect(app.config['DATABASE_PATH'])
             c = conn.cursor()
-            c.execute('UPDATE users SET stripe_customer_id = ? WHERE id = ?',
-                     (customer.id, current_user.id))
+            c.execute(
+                'UPDATE users SET stripe_customer_id = ? WHERE id = ?',
+                (customer.id, current_user.id),
+            )
             conn.commit()
             conn.close()
             customer_id = customer.id
         else:
             customer_id = current_user.stripe_customer_id
-        
-        # Get or create one-time price
-        price_id = app.config.get('STRIPE_ONETIME_PRICE_ID')
-        
-        if not price_id:
-            # Create product and price dynamically
-            products = stripe.Product.list(limit=100)
-            onetime_product = None
-            for product in products.data:
-                if product.name == 'Law Firm Feedback - One-Time Report':
-                    onetime_product = product
-                    break
-            
-            if not onetime_product:
-                onetime_product = stripe.Product.create(
-                    name='Law Firm Feedback - One-Time Report',
-                    description='Single client feedback analysis report'
-                )
-            
-            price = stripe.Price.create(
-                product=onetime_product.id,
-                unit_amount=app.config['ONETIME_REPORT_PRICE'] * 100,
-                currency='usd'
-            )
-            price_id = price.id
-        
-        # Create checkout session (ONE-TIME payment)
+
         checkout_session = stripe.checkout.Session.create(
             customer=customer_id,
             payment_method_types=['card'],
-            line_items=[{
-                'price': price_id,
-                'quantity': 1,
-            }],
+            line_items=[
+                {
+                    'price': app.config['STRIPE_PRICE_ID_ONETIME'],
+                    'quantity': 1,
+                }
+            ],
             mode='payment',  # ONE-TIME
-            success_url=url_for('onetime_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+            success_url=url_for('onetime_success', _external=True)
+            + '?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=url_for('buy_one_time', _external=True),
         )
-        
+
         return redirect(checkout_session.url, code=303)
-    
-    except Exception as e:
-        flash(f'Error: {str(e)}', 'danger')
+    except Exception:
+        flash('We were unable to start the payment session. Please try again or contact support.', 'danger')
         return redirect(url_for('buy_one_time'))
 
 @app.route('/onetime-success')
 @login_required
 def onetime_success():
-    """Handle successful one-time purchase"""
+    """Handle successful one-time payment and grant a report credit."""
     session_id = request.args.get('session_id')
-    
     if not session_id:
-        flash('Invalid session', 'danger')
-        return redirect(url_for('buy_one_time'))
-    
-    try:
-        checkout_session = stripe.checkout.Session.retrieve(session_id)
-        
-        if checkout_session.payment_status == 'paid':
-            conn = sqlite3.connect('lawfirm_feedback.db')
-            c = conn.cursor()
-            c.execute('''UPDATE users 
-                        SET one_time_reports_purchased = one_time_reports_purchased + 1
-                        WHERE id = ?''', (current_user.id,))
-            conn.commit()
-            conn.close()
-            
-            current_user.one_time_reports_purchased += 1
-            
-            flash(f'Payment successful! You have {current_user.get_remaining_one_time_reports()} report(s) available.', 'success')
-            return redirect(url_for('upload'))
-        else:
-            flash('Payment not completed', 'warning')
-            return redirect(url_for('buy_one_time'))
-    
-    except Exception as e:
-        flash(f'Error: {str(e)}', 'danger')
+        flash('The payment session could not be found. Please start a new payment.', 'danger')
         return redirect(url_for('buy_one_time'))
 
-# ===== MONTHLY SUBSCRIPTION ($99) =====
+    try:
+        checkout_session = stripe.checkout.Session.retrieve(session_id)
+
+        if checkout_session.payment_status == 'paid':
+            conn = sqlite3.connect(app.config['DATABASE_PATH'])
+            c = conn.cursor()
+            c.execute(
+                '''
+                UPDATE users
+                SET one_time_reports_purchased = one_time_reports_purchased + 1
+                WHERE id = ?
+                ''',
+                (current_user.id,),
+            )
+            conn.commit()
+            conn.close()
+
+            flash('Payment was successful. One report credit has been added to your account.', 'success')
+            return redirect(url_for('upload'))
+        else:
+            flash('The payment was not completed. No charges have been applied.', 'warning')
+            return redirect(url_for('buy_one_time'))
+    except Exception:
+        flash('We were unable to confirm the payment. Please contact support if the issue persists.', 'danger')
+        return redirect(url_for('buy_one_time'))
 
 @app.route('/subscribe')
 @login_required
 def subscribe():
-    """Subscribe to $99/month plan"""
-    if current_user.has_active_subscription():
-        flash('You already have an active subscription', 'info')
-        return redirect(url_for('upload'))
-    
-    return render_template('subscribe.html', 
-                         price=app.config['MONTHLY_SUBSCRIPTION_PRICE'],
-                         stripe_publishable_key=app.config['STRIPE_PUBLISHABLE_KEY'])
+    """Subscription selection page (monthly / annual)."""
+    return render_template(
+        'subscribe.html',
+        monthly_price=app.config['MONTHLY_SUBSCRIPTION_PRICE'],
+        annual_price=app.config['ANNUAL_SUBSCRIPTION_PRICE'],
+        stripe_publishable_key=app.config['STRIPE_PUBLISHABLE_KEY'],
+    )
 
-@app.route('/create-checkout-session', methods=['POST'])
+@app.route('/create-subscription-checkout', methods=['POST'])
 @login_required
-def create_checkout_session():
-    """Create Stripe Checkout for monthly subscription"""
+def create_subscription_checkout():
+    """Create Stripe Checkout session for recurring subscription."""
+    plan = request.form.get('plan', 'monthly')  # 'monthly' or 'annual'
+
+    # Select the correct Price ID
+    if plan == 'annual':
+        price_id = app.config['STRIPE_PRICE_ID_ANNUAL']
+    else:
+        price_id = app.config['STRIPE_PRICE_ID_MONTHLY']
+
     try:
-        # Create/get Stripe customer
         if not current_user.stripe_customer_id:
             customer = stripe.Customer.create(
-                email=current_user.email,
-                metadata={'user_id': current_user.id, 'firm_name': current_user.firm_name}
+                email=current_user.email or current_user.username,
+                metadata={'user_id': current_user.id},
             )
-            
-            conn = sqlite3.connect('lawfirm_feedback.db')
+            conn = sqlite3.connect(app.config['DATABASE_PATH'])
             c = conn.cursor()
-            c.execute('UPDATE users SET stripe_customer_id = ? WHERE id = ?',
-                     (customer.id, current_user.id))
+            c.execute(
+                'UPDATE users SET stripe_customer_id = ? WHERE id = ?',
+                (customer.id, current_user.id),
+            )
             conn.commit()
             conn.close()
             customer_id = customer.id
         else:
             customer_id = current_user.stripe_customer_id
-        
-        # Create checkout session (SUBSCRIPTION)
+
         checkout_session = stripe.checkout.Session.create(
             customer=customer_id,
             payment_method_types=['card'],
-            line_items=[{
-                'price': app.config['STRIPE_MONTHLY_PRICE_ID'],
-                'quantity': 1,
-            }],
+            line_items=[
+                {
+                    'price': price_id,
+                    'quantity': 1,
+                }
+            ],
             mode='subscription',  # RECURRING
-            success_url=url_for('subscription_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+            success_url=url_for('subscription_success', _external=True)
+            + f'?session_id={{CHECKOUT_SESSION_ID}}&plan={plan}',
             cancel_url=url_for('subscribe', _external=True),
         )
-        
+
         return redirect(checkout_session.url, code=303)
-    
-    except Exception as e:
-        flash(f'Error: {str(e)}', 'danger')
+    except Exception:
+        flash('We were unable to start the subscription session. Please try again or contact support.', 'danger')
         return redirect(url_for('subscribe'))
 
 @app.route('/subscription-success')
 @login_required
 def subscription_success():
-    """Handle successful subscription"""
+    """Handle successful subscription and mark account as active."""
     session_id = request.args.get('session_id')
-    
+    plan = request.args.get('plan', 'monthly')
+
     if not session_id:
-        flash('Invalid session', 'danger')
+        flash('The subscription session could not be found. Please start a new subscription.', 'danger')
         return redirect(url_for('subscribe'))
-    
+
     try:
         checkout_session = stripe.checkout.Session.retrieve(session_id)
-        
-        conn = sqlite3.connect('lawfirm_feedback.db')
+
+        conn = sqlite3.connect(app.config['DATABASE_PATH'])
         c = conn.cursor()
-        c.execute('''UPDATE users 
-                    SET stripe_subscription_id = ?, subscription_status = 'active'
-                    WHERE id = ?''',
-                 (checkout_session.subscription, current_user.id))
+        c.execute(
+            '''
+            UPDATE users
+            SET stripe_subscription_id = ?,
+                subscription_status = 'active',
+                subscription_type = ?
+            WHERE id = ?
+            ''',
+            (checkout_session.subscription, plan, current_user.id),
+        )
         conn.commit()
         conn.close()
-        
-        current_user.stripe_subscription_id = checkout_session.subscription
-        current_user.subscription_status = 'active'
-        
-        flash('Subscription successful! Unlimited reports now available.', 'success')
+
+        flash('Your subscription is now active. You can generate unlimited reports.', 'success')
         return redirect(url_for('upload'))
-    
-    except Exception as e:
-        flash(f'Error: {str(e)}', 'danger')
+    except Exception:
+        flash('We were unable to confirm the subscription. Please contact support if the issue persists.', 'danger')
         return redirect(url_for('subscribe'))
 
-@app.route('/cancel-subscription', methods=['POST'])
+@app.route('/upload', methods=['GET', 'POST'])
 @login_required
-def cancel_subscription():
-    """Cancel subscription"""
-    if not current_user.stripe_subscription_id:
-        flash('No active subscription', 'warning')
-        return redirect(url_for('upload'))
-    
-    try:
-        stripe.Subscription.delete(current_user.stripe_subscription_id)
-        
-        conn = sqlite3.connect('lawfirm_feedback.db')
-        c = conn.cursor()
-        c.execute('''UPDATE users 
-                    SET subscription_status = 'trial', stripe_subscription_id = NULL
-                    WHERE id = ?''', (current_user.id,))
-        conn.commit()
-        conn.close()
-        
-        current_user.subscription_status = 'trial'
-        current_user.stripe_subscription_id = None
-        
-        flash('Subscription cancelled', 'info')
-        return redirect(url_for('upload'))
-    
-    except Exception as e:
-        flash(f'Error: {str(e)}', 'danger')
-        return redirect(url_for('upload'))
+def upload():
+    """CSV upload page for bulk review import with tiered limits."""
+    account_status = current_user.get_account_status()
+    can_upload = current_user.can_generate_report()
 
-# ===== STRIPE WEBHOOK =====
+    if request.method == 'POST':
+        if not can_upload:
+            flash('You have no remaining report credits. Please select a plan or purchase an additional report.', 'warning')
+            return redirect(url_for('pricing'))
 
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    """Handle Stripe webhooks"""
-    payload = request.data
-    sig_header = request.headers.get('Stripe-Signature')
-    webhook_secret = app.config.get('STRIPE_WEBHOOK_SECRET')
-    
-    if not webhook_secret:
-        return 'Webhook secret not configured', 500
-    
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, webhook_secret
-        )
-    except ValueError:
-        return 'Invalid payload', 400
-    except stripe.error.SignatureVerificationError:
-        return 'Invalid signature', 400
-    
-    # Handle events
-    if event['type'] == 'payment_intent.succeeded':
-        print(f"One-time payment succeeded")
-    
-    elif event['type'] == 'customer.subscription.deleted':
-        subscription = event['data']['object']
-        conn = sqlite3.connect('lawfirm_feedback.db')
-        c = conn.cursor()
-        c.execute('''UPDATE users 
-                    SET subscription_status = 'trial', stripe_subscription_id = NULL
-                    WHERE stripe_subscription_id = ?''', (subscription['id'],))
-        conn.commit()
-        conn.close()
-    
-    elif event['type'] == 'customer.subscription.updated':
-        subscription = event['data']['object']
-        status = 'active' if subscription['status'] == 'active' else 'trial'
-        conn = sqlite3.connect('lawfirm_feedback.db')
-        c = conn.cursor()
-        c.execute('''UPDATE users 
-                    SET subscription_status = ?
-                    WHERE stripe_subscription_id = ?''', (status, subscription['id']))
-        conn.commit()
-        conn.close()
-    
-    return 'Success', 200
+        if 'file' not in request.files:
+            flash('No file uploaded.', 'danger')
+            return redirect(url_for('upload'))
+
+        file = request.files['file']
+        if file.filename == '':
+            flash('No file selected.', 'danger')
+            return redirect(url_for('upload'))
+
+        if not file.filename.lower().endswith('.csv'):
+            flash('Please upload a CSV file.', 'danger')
+            return redirect(url_for('upload'))
+
+        try:
+            csv_content = file.read().decode('utf-8')
+            csv_file = StringIO(csv_content)
+            reader = csv.DictReader(csv_file)
+
+            if not reader.fieldnames or not all(col in reader.fieldnames for col in ['date', 'rating', 'review_text']):
+                flash('The CSV file must include the header columns: date, rating, review_text.', 'danger')
+                return redirect(url_for('upload'))
+
+            conn = sqlite3.connect(app.config['DATABASE_PATH'])
+            c = conn.cursor()
+
+            count = 0
+            for row in reader:
+                if row['date'] and row['rating'] and row['review_text']:
+                    try:
+                        rating = int(row['rating'])
+                        if 1 <= rating <= 5:
+                            c.execute(
+                                'INSERT INTO reviews (date, rating, review_text) VALUES (?, ?, ?)',
+                                (row['date'], rating, row['review_text'])
+                            )
+                            count += 1
+                    except ValueError:
+                        continue
+
+            # Update usage counters based on tier
+            if current_user.has_active_subscription():
+                report_type = current_user.subscription_type
+            elif current_user.has_unused_one_time_reports():
+                report_type = 'onetime'
+                c.execute(
+                    '''
+                    UPDATE users
+                    SET one_time_reports_used = one_time_reports_used + 1
+                    WHERE id = ?
+                    ''',
+                    (current_user.id,),
+                )
+            else:
+                report_type = 'trial'
+                c.execute(
+                    '''
+                    UPDATE users
+                    SET trial_reviews_used = trial_reviews_used + 1
+                    WHERE id = ?
+                    ''',
+                    (current_user.id,),
+                )
+
+            conn.commit()
+            conn.close()
+
+            flash(f'Successfully imported {count} reviews using your {report_type} access.', 'success')
+            return redirect(url_for('dashboard'))
+
+        except Exception:
+            flash('An unexpected error occurred while processing the CSV file. Please try again or contact support.', 'danger')
+            return redirect(url_for('upload'))
+
+    return render_template(
+        'upload.html',
+        account_status=account_status,
+        can_upload=can_upload,
+    )
+
+@app.route('/download-pdf')
+@login_required
+def download_pdf():
+    """Generate and download PDF report based on user's plan."""
+    analysis = analyze_reviews()
+
+    if analysis['total_reviews'] == 0:
+        flash('No reviews available to generate report.', 'warning')
+        return redirect(url_for('dashboard'))
+
+    # Enrich themes with percentage values for the PDF
+    themes_dict = analysis['themes']
+    total_mentions = sum(themes_dict.values()) or 1
+
+    enriched_themes = []
+    for name, mentions in themes_dict.items():
+        enriched_themes.append({
+            'name': name,
+            'mentions': int(mentions),
+            'percentage': (int(mentions) / total_mentions) * 100.0,
+        })
+
+    # Determine paid status and subscription type for implementation plans
+    is_paid_user = current_user.has_active_subscription() or current_user.has_unused_one_time_reports()
+    subscription_type = (
+        current_user.subscription_type
+        if current_user.has_active_subscription()
+        else ('onetime' if current_user.has_unused_one_time_reports() else 'trial')
+    )
+
+    pdf_buffer = generate_pdf_report(
+        firm_name=current_user.firm_name or app.config['FIRM_NAME'],
+        total_reviews=analysis['total_reviews'],
+        avg_rating=analysis['avg_rating'],
+        themes=enriched_themes,
+        top_praise=analysis['top_praise'],
+        top_complaints=analysis['top_complaints'],
+        is_paid_user=is_paid_user,
+        subscription_type=subscription_type,
+        analysis_period=None,
+    )
+
+    return send_file(
+        pdf_buffer,
+        as_attachment=True,
+        download_name=f'feedback_report_{datetime.now().strftime("%Y%m%d")}.pdf',
+        mimetype='application/pdf'
+    )
+
+# ===== ERROR HANDLERS =====
+
+@app.errorhandler(404)
+def not_found(error):
+    return render_template('marketing_home.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    flash('An unexpected error occurred. Our team has been notified.', 'danger')
+    return render_template('marketing_home.html'), 500
+
+@app.errorhandler(RequestEntityTooLarge)
+def file_too_large(error):
+    flash('The uploaded file exceeds the 10 MB size limit.', 'danger')
+    return redirect(request.referrer or url_for('upload')), 413
+
+# ===== APPLICATION ENTRY POINT =====
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=app.config['DEBUG'])

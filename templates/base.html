@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Law Firm Insights - Client Feedback Intelligence{% endblock %}</title>
+    <meta name="description" content="Transform client feedback into actionable insights for your law firm. Professional analysis, automated reporting, and data-driven improvements.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <!-- Premium Navigation Bar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <a href="{{ url_for('marketing_home') }}">
+                    <span class="logo-icon">⚖️</span>
+                    <span class="logo-text">Law Firm Insights</span>
+                </a>
+            </div>
+            <div class="nav-menu">
+                {% if current_user.is_authenticated %}
+                    <!-- Authenticated User Menu -->
+                    <a href="{{ url_for('marketing_home') }}">Home</a>
+                    <a href="{{ url_for('dashboard') }}" class="nav-highlight">Dashboard</a>
+                    <a href="{{ url_for('upload') }}">Upload Data</a>
+                    <a href="{{ url_for('feedback_form') }}">Feedback Form</a>
+                    <a href="{{ url_for('logout') }}" class="nav-button">Logout</a>
+                {% else %}
+                    <!-- Public Menu -->
+                    <a href="{{ url_for('marketing_home') }}">Home</a>
+                    <a href="{{ url_for('how_it_works') }}">How It Works</a>
+                    <a href="{{ url_for('features') }}">Features</a>
+                    <a href="{{ url_for('case_studies') }}">Case Studies</a>
+                    <a href="{{ url_for('pricing') }}">Pricing</a>
+                    <a href="{{ url_for('feedback_form') }}" class="nav-accent">Leave Feedback</a>
+                    <a href="{{ url_for('login') }}" class="nav-button">Login</a>
+                {% endif %}
+            </div>
+            
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <span class="alert-icon">
+                                {% if category == 'success' %}✓{% elif category == 'danger' %}✕{% elif category == 'warning' %}⚠{% else %}ℹ{% endif %}
+                            </span>
+                            <span class="alert-message">{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-section">
+                    <h4>Law Firm Insights</h4>
+                    <p class="footer-tagline">
+                        Transform client feedback into strategic improvements for your practice.
+                    </p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Product</h4>
+                    <ul class="footer-links">
+                        <li><a href="{{ url_for('features') }}">Features</a></li>
+                        <li><a href="{{ url_for('pricing') }}">Pricing</a></li>
+                        <li><a href="{{ url_for('how_it_works') }}">How It Works</a></li>
+                        <li><a href="{{ url_for('case_studies') }}">Case Studies</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Get Started</h4>
+                    <ul class="footer-links">
+                        <li><a href="{{ url_for('register') }}">Sign Up</a></li>
+                        <li><a href="{{ url_for('login') }}">Login</a></li>
+                        <li><a href="{{ url_for('feedback_form') }}">Leave Feedback</a></li>
+                        {% if current_user.is_authenticated %}
+                            <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Company</h4>
+                    <ul class="footer-links">
+                        <li><a href="{{ url_for('privacy') }}">Privacy Policy</a></li>
+                        <li><a href="{{ url_for('terms') }}">Terms of Service</a></li>
+                        <li><a href="{{ url_for('security') }}">Security</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 Law Firm Insights. Professional client feedback intelligence for law firms.</p>
+                <p class="footer-legal">
+                    <a href="{{ url_for('privacy') }}">Privacy Policy</a> · 
+                    <a href="{{ url_for('terms') }}">Terms of Service</a> · 
+                    <a href="{{ url_for('security') }}">Security</a>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobileMenuToggle')?.addEventListener('click', function() {
+            document.querySelector('.nav-menu').classList.toggle('active');
+        });
+    </script>
+</body>
+</html>

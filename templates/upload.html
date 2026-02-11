@@ -1,182 +1,144 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Upload Reviews - Law Firm Feedback Report</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f7fa;
-        }
-        .navbar {
-            background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
-            color: white;
-            padding: 20px 0;
-        }
-        .navbar .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .navbar nav a {
-            color: white;
-            text-decoration: none;
-            margin-left: 20px;
-            padding: 8px 16px;
-            border-radius: 6px;
-        }
-        .navbar nav a:hover { background: rgba(255,255,255,0.1); }
-        .container {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-        .status-card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
-        }
-        .status-badge {
-            display: inline-block;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            margin-bottom: 15px;
-        }
-        .badge-success { background: #d4edda; color: #155724; }
-        .badge-primary { background: #d1ecf1; color: #0c5460; }
-        .badge-warning { background: #fff3cd; color: #856404; }
-        .badge-danger { background: #f8d7da; color: #721c24; }
-        .upload-card {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
-        }
-        h1 { color: #1e3a5f; margin-bottom: 20px; }
-        .file-input {
-            margin: 20px 0;
-            padding: 20px;
-            border: 2px dashed #3498db;
-            border-radius: 8px;
-            background: #f8f9fb;
-        }
-        input[type="file"] { width: 100%; padding: 10px; }
-        button {
-            width: 100%;
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-            color: white;
-            padding: 16px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1em;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-        button:hover { transform: translateY(-2px); }
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .alert-success { background: #d4edda; color: #155724; }
-        .alert-warning { background: #fff3cd; color: #856404; }
-        .alert-danger { background: #f8d7da; color: #721c24; }
-        .pricing-options {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-        .pricing-option {
-            padding: 15px;
-            background: #f8f9fb;
-            border: 2px solid #e0e6ed;
-            border-radius: 8px;
-            text-align: center;
-        }
-        .pricing-option h3 { color: #1e3a5f; margin-bottom: 10px; }
-        .pricing-option a {
-            display: inline-block;
-            margin-top: 10px;
-            padding: 8px 20px;
-            background: #3498db;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-        }
-    </style>
-</head>
-<body>
-    <div class="navbar">
-        <div class="container">
-            <h2>📊 Law Firm Feedback Report</h2>
-            <nav>
-                <a href="{{ url_for('logout') }}">Logout</a>
-            </nav>
-        </div>
-    </div>
-    
+{% extends "base.html" %}
+
+{% block title %}Upload Reviews - Law Firm Insights{% endblock %}
+
+{% block content %}
+<section class="upload-page">
     <div class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        
-        <!-- Account Status -->
-        <div class="status-card">
-            <h2>Your Account Status</h2>
-            <div class="status-badge badge-{{ account_status.badge_color }}">
-                {{ account_status.display }}
+        <div class="page-header-internal">
+            <div class="header-content">
+                <h1>Upload Client Reviews</h1>
+                <p class="header-subtitle">Import historical feedback in bulk from a CSV file</p>
+            </div>
+            <div class="header-actions">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline">
+                    <span class="btn-icon">←</span> Back to Dashboard
+                </a>
             </div>
         </div>
-        
-        {% if can_upload %}
-            <!-- Upload Form -->
-            <div class="upload-card">
-                <h1>Upload Client Reviews</h1>
-                <p>Upload your CSV file containing client reviews for analysis</p>
-                
-                <form method="POST" enctype="multipart/form-data">
-                    <div class="file-input">
-                        <input type="file" name="file" accept=".csv" required>
-                    </div>
-                    <p style="color: #666; font-size: 0.9em;">
-                        CSV must contain columns: <strong>date, rating, review_text</strong>
-                    </p>
-                    <button type="submit">Generate Report</button>
-                </form>
+
+        <!-- Usage Notice -->
+        {% if account_status is defined %}
+        <div class="usage-notice">
+            <div class="usage-info">
+                <span class="usage-icon">📊</span>
+                <span class="usage-text">
+                    <strong>Account Status:</strong> {{ account_status.display }}
+                </span>
             </div>
-        {% else %}
-            <!-- No Reports Available -->
-            <div class="upload-card">
-                <h1>No Reports Remaining</h1>
-                <p style="margin-bottom: 30px;">Choose a plan to continue generating reports:</p>
-                
-                <div class="pricing-options">
-                    <div class="pricing-option">
-                        <h3>One-Time Report</h3>
-                        <p>$39 per report</p>
-                        <a href="{{ url_for('buy_one_time') }}">Buy Now</a>
+            {% if not can_upload %}
+                <a href="{{ url_for('pricing') }}" class="upgrade-link">No reports remaining · View pricing →</a>
+            {% elif account_status.type == 'trial' %}
+                <a href="{{ url_for('pricing') }}" class="upgrade-link">Upgrade for unlimited reports →</a>
+            {% elif account_status.type == 'onetime' %}
+                <a href="{{ url_for('buy_one_time') }}" class="upgrade-link">Buy additional one-time reports →</a>
+            {% elif account_status.type in ['monthly', 'annual'] %}
+                <span class="upgrade-link">Unlimited reports with your subscription</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="content-grid">
+            <!-- Instructions Card -->
+            <div class="instructions-section">
+                <div class="card">
+                    <h3 class="card-title">CSV Format Requirements</h3>
+                    <p>Your CSV file must contain the following columns in this exact order:</p>
+                    <ul class="requirements-list">
+                        <li>
+                            <strong>date</strong>
+                            <span class="requirement-detail">Date in YYYY-MM-DD format (e.g., 2024-01-15)</span>
+                        </li>
+                        <li>
+                            <strong>rating</strong>
+                            <span class="requirement-detail">Integer from 1 to 5</span>
+                        </li>
+                        <li>
+                            <strong>review_text</strong>
+                            <span class="requirement-detail">The full review content</span>
+                        </li>
+                    </ul>
+                    
+                    <h4 class="subsection-title">Example CSV:</h4>
+                    <pre class="code-block">date,rating,review_text
+2024-01-15,5,"Excellent legal services and professional communication."
+2024-01-14,4,"Very satisfied with the outcome of my case."
+2024-01-13,2,"Response times could be improved."</pre>
+                    
+                    <div class="info-box">
+                        <span class="info-icon">ℹ️</span>
+                        <div class="info-content">
+                            <strong>Important:</strong> The first row must be the header row. 
+                            If your review text contains commas, enclose it in quotes.
+                        </div>
                     </div>
-                    <div class="pricing-option">
-                        <h3>Monthly Unlimited</h3>
-                        <p>$99/month</p>
-                        <a href="{{ url_for('subscribe') }}">Subscribe</a>
+
+                    <div class="info-box warning">
+                        <span class="info-icon">⚠️</span>
+                        <div class="info-content">
+                            <strong>Free Trial Limit:</strong> Your free trial includes {{ account_status.trial_limit if account_status and account_status.type == 'trial' else trial_limit | default(3) }} reports. 
+                            Each upload counts as one report toward your limit.
+                        </div>
                     </div>
                 </div>
             </div>
-        {% endif %}
+
+            <!-- Upload Form Card -->
+            <div class="upload-section">
+                <div class="card">
+                    <h3 class="card-title">Upload Your CSV File</h3>
+                    <form method="POST" enctype="multipart/form-data" action="{{ url_for('upload') }}" class="upload-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="form-group">
+                            <label for="file" class="form-label">Select CSV File</label>
+                            <div class="file-upload-area">
+                                <input type="file" 
+                                       id="file" 
+                                       name="file" 
+                                       class="form-control-file" 
+                                       accept=".csv"
+                                       required>
+                                <div class="file-upload-placeholder">
+                                    <span class="upload-icon">📁</span>
+                                    <span class="upload-text">Choose a CSV file</span>
+                                </div>
+                            </div>
+                            <small class="form-text">Maximum file size: 10MB</small>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary btn-large btn-block" {% if not can_upload %}disabled{% endif %}>
+                                <span class="btn-icon">📤</span>
+                                {% if can_upload %}
+                                    Upload and Import
+                                {% else %}
+                                    No reports remaining – View pricing
+                                {% endif %}
+                            </button>
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-outline btn-block">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Help Section -->
+                <div class="help-section">
+                    <div class="help-item">
+                        <span class="help-icon">💡</span>
+                        <div class="help-content">
+                            <strong>Need a sample file?</strong>
+                            <p>A sample CSV file is available in the <code>sample_data/</code> directory for testing.</p>
+                        </div>
+                    </div>
+                    <div class="help-item">
+                        <span class="help-icon">❓</span>
+                        <div class="help-content">
+                            <strong>Having trouble?</strong>
+                            <p>Make sure your CSV matches the required format exactly. Check that dates are in YYYY-MM-DD format and ratings are 1-5.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-</body>
-</html>
+</section>
+{% endblock %}

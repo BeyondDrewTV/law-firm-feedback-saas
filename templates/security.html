@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Security - Law Firm Insights{% endblock %}
+
+{% block content %}
+<section class="legal-page">
+    <div class="container" style="max-width: 900px; padding: 40px 20px;">
+        <h1 style="color: #1a365d; margin-bottom: 20px; font-size: 2.5rem;">Security</h1>
+        <p style="color: #666; margin-bottom: 40px;">
+            Client feedback is sensitive data. We take security seriously and implement practical, industry‑standard measures
+            appropriate for a small SaaS product to help protect your information.
+        </p>
+
+        <div class="legal-content" style="line-height: 1.8; color: #333;">
+            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">🔐 Data Encryption</h2>
+            <ul style="margin-left: 20px; margin-bottom: 30px;">
+                <li style="margin-bottom: 10px;">
+                    <strong>In Transit:</strong> All data transmitted between your browser and our servers is encrypted using
+                    modern TLS with strong ciphers.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>At Rest:</strong> Our hosting provider offers encryption at rest for stored data.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>Passwords:</strong> All passwords are hashed using PBKDF2‑SHA256 with secure salts.
+                    We never store passwords in plain text.
+                </li>
+            </ul>
+
+            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">🔒 Access Controls</h2>
+            <ul style="margin-left: 20px; margin-bottom: 30px;">
+                <li style="margin-bottom: 10px;">
+                    <strong>Authentication:</strong> Secure session management with automatic timeout.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>Authorization:</strong> Access controls ensure each account can only view its own data.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>Password Requirements:</strong> Minimum 8 characters with uppercase, lowercase, and numbers.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>CSRF Protection:</strong> Forms are protected against cross‑site request forgery attacks.
+                </li>
+            </ul>
+
+            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">🏢 Infrastructure Security</h2>
+            <ul style="margin-left: 20px; margin-bottom: 30px;">
+                <li style="margin-bottom: 10px;">
+                    <strong>Hosting:</strong> Hosted on modern cloud infrastructure designed for high availability.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>Database:</strong> Isolated databases with restricted access and regular backups.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>Monitoring:</strong> System monitoring provided by our hosting provider, plus application‑level logging and alerts.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>Updates:</strong> Regular security patches and software updates to the application and dependencies.
+                </li>
+            </ul>
+
+            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">💳 Payment Security</h2>
+            <ul style="margin-left: 20px; margin-bottom: 30px;">
+                <li style="margin-bottom: 10px;">
+                    <strong>PCI Compliance:</strong> All payments are processed through Stripe, a PCI Level 1 certified provider.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>No Card Storage:</strong> We never store credit card details on our servers.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>Secure Checkout:</strong> All payment pages use SSL/TLS encryption.
+                </li>
+            </ul>
+
+            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">🛡️ Application Security</h2>
+            <ul style="margin-left: 20px; margin-bottom: 30px;">
+                <li style="margin-bottom: 10px;">
+                    <strong>Input Validation:</strong> User input is validated and sanitized to reduce the risk of injection attacks.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>SQL Injection Protection:</strong> Parameterized queries are used to help prevent SQL injection.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>XSS Prevention:</strong> Output encoding is used to help prevent cross‑site scripting.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>Rate Limiting:</strong> Basic protections are in place to limit abusive or automated requests.
+                </li>
+            </ul>
+
+            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">📋 Compliance</h2>
+            <ul style="margin-left: 20px; margin-bottom: 30px;">
+                <li style="margin-bottom: 10px;">
+                    <strong>Data Privacy:</strong> We aim to follow modern data privacy best practices and will update our processes as we grow.
+                    Formal GDPR/CCPA compliance should be reviewed with legal counsel before large‑scale deployment.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>Legal Requirements:</strong> Data retention practices are designed to comply with applicable laws where we operate.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>Confidentiality:</strong> Reports are intended for internal use and can be marked confidential in your workflows.
+                </li>
+            </ul>
+
+            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">🔍 Security Auditing</h2>
+            <ul style="margin-left: 20px; margin-bottom: 30px;">
+                <li style="margin-bottom: 10px;">
+                    <strong>Reviews:</strong> We periodically review the application and infrastructure for potential security issues.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>Logging:</strong> Application and access logs help us investigate unusual activity.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>Incident Handling:</strong> We maintain internal procedures for investigating and responding to security incidents.
+                </li>
+            </ul>
+
+            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">👥 Team Access</h2>
+            <ul style="margin-left: 20px; margin-bottom: 30px;">
+                <li style="margin-bottom: 10px;">
+                    <strong>Limited Access:</strong> Only essential personnel have access to production systems and data.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>Confidentiality:</strong> Team members are expected to handle customer data confidentially.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>Training:</strong> We promote ongoing security awareness as part of our development and operations.
+                </li>
+            </ul>
+
+            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">📊 Data Backup</h2>
+            <ul style="margin-left: 20px; margin-bottom: 30px;">
+                <li style="margin-bottom: 10px;">
+                    <strong>Automated Backups:</strong> Regular backups of key data are performed.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>Redundancy:</strong> Our hosting provider maintains redundancy to reduce the risk of data loss.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>Testing:</strong> We periodically verify that backups can be restored.
+                </li>
+            </ul>
+
+            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">🚨 Reporting Security Issues</h2>
+            <p style="margin-bottom: 20px;">
+                If you discover a potential security vulnerability, please report it responsibly:
+            </p>
+            <ul style="margin-left: 20px; margin-bottom: 30px;">
+                <li style="margin-bottom: 10px;"><strong>Email:</strong> security@lawfirminsights.com (this address will be monitored before full public launch)</li>
+                <li style="margin-bottom: 10px;">Do not publicly disclose the issue until we've had an opportunity to investigate and address it.</li>
+                <li style="margin-bottom: 10px;">Provide enough detail to help us reproduce and understand the issue.</li>
+            </ul>
+
+            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">✅ Your Responsibilities</h2>
+            <p style="margin-bottom: 20px;">Help us keep your account secure by:</p>
+            <ul style="margin-left: 20px; margin-bottom: 30px;">
+                <li style="margin-bottom: 10px;">Using a strong, unique password.</li>
+                <li style="margin-bottom: 10px;">Not sharing your account credentials.</li>
+                <li style="margin-bottom: 10px;">Logging out on shared computers.</li>
+                <li style="margin-bottom: 10px;">Reporting any suspicious activity immediately.</li>
+                <li style="margin-bottom: 10px;">Keeping your contact information up to date.</li>
+            </ul>
+
+            <div style="background: #e7f3ff; padding: 30px; border-radius: 8px; margin-top: 40px;">
+                <h3 style="color: #2c5282; margin-bottom: 15px; font-size: 1.5rem;">Questions About Security?</h3>
+                <p style="margin-bottom: 15px;">
+                    We're happy to answer any security questions you may have as the product evolves. Contact us at:
+                </p>
+                <p>
+                    <strong>Email:</strong> security@lawfirminsights.com<br>
+                    <strong>Note:</strong> This dedicated security contact will be fully activated before broad public launch.
+                </p>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 60px;">
+            <a href="{{ url_for('marketing_home') }}" class="btn btn-outline">← Back to Home</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Thank You - Law Firm Insights{% endblock %}
+
+{% block content %}
+<div class="thank-you-container">
+    <div class="success-icon">✓</div>
+    <h1>Thank You for Your Feedback!</h1>
+    <p class="lead">
+        Your feedback has been successfully submitted and will help us improve our services.
+    </p>
+    <p>
+        We truly appreciate you taking the time to share your thoughts and experiences with us.
+        Your input is invaluable in our commitment to providing exceptional legal services.
+    </p>
+    
+    <div class="cta-buttons">
+        <a href="{{ url_for('marketing_home') }}" class="btn btn-primary">Return to Home</a>
+        <a href="{{ url_for('feedback_form') }}" class="btn btn-secondary">Submit Another Review</a>
+    </div>
+</div>
+{% endblock %}

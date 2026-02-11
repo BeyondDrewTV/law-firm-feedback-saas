@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}Pricing - Law Firm Insights{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="container">
+        <h1>Simple, Transparent Pricing</h1>
+        <p class="page-subtitle">
+            Self-service plans designed for law firms of all sizes. No sales calls, no contracts.
+        </p>
+    </div>
+</section>
+
+<section class="pricing-tiers">
+    <div class="container">
+        <div class="pricing-grid">
+            <!-- Free Trial -->
+            <div class="pricing-card">
+                <div class="plan-header">
+                    <h3>Free Trial</h3>
+                    <div class="plan-price">
+                        <span class="price">$0</span>
+                        <span class="period">forever</span>
+                    </div>
+                    <p class="plan-tagline">Test with limited reports</p>
+                </div>
+                
+                <div class="plan-features">
+                    <h4>What's Included:</h4>
+                    <ul>
+                        <li class="included">✓ 3 reports total</li>
+                        <li class="included">✓ Up to 50 reviews per report</li>
+                        <li class="included">✓ CSV bulk upload</li>
+                        <li class="included">✓ Theme detection & analysis</li>
+                        <li class="included">✓ Dashboard access</li>
+                        <li class="included">✓ Basic PDF report with watermark</li>
+                        <li class="not-included">✗ Implementation strategies & timelines</li>
+                        <li class="not-included">✗ Unlimited reports</li>
+                    </ul>
+                </div>
+                
+                <div class="plan-cta">
+                    <a href="{{ url_for('register') }}" class="btn btn-outline btn-block">Start Free Trial</a>
+                    <p class="plan-note">No credit card required</p>
+                </div>
+            </div>
+
+            <!-- One-Time Report -->
+            <div class="pricing-card">
+                <div class="plan-header">
+                    <h3>One-Time Report</h3>
+                    <div class="plan-price">
+                        <span class="price">$49</span>
+                        <span class="period">one-time</span>
+                    </div>
+                    <p class="plan-tagline">Single in-depth analysis</p>
+                </div>
+                
+                <div class="plan-features">
+                    <h4>Everything in Free, plus:</h4>
+                    <ul>
+                        <li class="included">✓ 1 report credit</li>
+                        <li class="included">✓ Up to 500 reviews</li>
+                        <li class="included">✓ Full PDF report (no watermark)</li>
+                        <li class="included">✓ 90-day implementation plans</li>
+                        <li class="included">✓ Action items with timelines</li>
+                        <li class="included">✓ KPIs & success metrics</li>
+                        <li class="included">✓ Strategic plans for top 3 themes</li>
+                        <li class="not-included">✗ Unlimited reports</li>
+                    </ul>
+                </div>
+                
+                <div class="plan-cta">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('buy_one_time') }}" class="btn btn-primary btn-block">
+                            Buy One-Time Report — $49
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="btn btn-primary btn-block">Log in to Purchase</a>
+                    {% endif %}
+                    <p class="plan-note">Purchase additional reports at any time</p>
+                </div>
+            </div>
+
+            <!-- Pro Monthly (Popular) -->
+            <div class="pricing-card popular">
+                <div class="popular-badge">Most Popular</div>
+                <div class="plan-header">
+                    <h3>Pro Monthly</h3>
+                    <div class="plan-price">
+                        <span class="price">$129</span>
+                        <span class="period">/month</span>
+                    </div>
+                    <p class="plan-tagline">Unlimited ongoing analysis</p>
+                </div>
+                
+                <div class="plan-features">
+                    <h4>Everything in One-Time, plus:</h4>
+                    <ul>
+                        <li class="included">✓ Unlimited reports</li>
+                        <li class="included">✓ Unlimited reviews per report</li>
+                        <li class="included">✓ Full PDF with implementation plans</li>
+                        <li class="included">✓ Strategic plans for top 3 themes</li>
+                        <li class="included">✓ Dashboard analytics</li>
+                        <li class="included">✓ Cancel anytime</li>
+                        <li class="not-included">✗ Plans for all identified themes</li>
+                    </ul>
+                </div>
+                
+                <div class="plan-cta">
+                    {% if current_user.is_authenticated %}
+                        <form method="POST" action="{{ url_for('create_subscription_checkout') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <input type="hidden" name="plan" value="monthly">
+                            <button type="submit" class="btn btn-primary btn-block">
+                                Subscribe Monthly — $129/mo
+                            </button>
+                        </form>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="btn btn-primary btn-block">Log in to Subscribe</a>
+                    {% endif %}
+                    <p class="plan-note">Cancel anytime with no penalties</p>
+                </div>
+            </div>
+
+            <!-- Pro Annual -->
+            <div class="pricing-card">
+                <div class="plan-header">
+                    <h3>Pro Annual</h3>
+                    <div class="plan-price">
+                        <span class="price">$1,290</span>
+                        <span class="period">/year</span>
+                    </div>
+                    <p class="plan-tagline">$108/mo billed annually — save 17%</p>
+                </div>
+                
+                <div class="plan-features">
+                    <h4>Everything in Pro Monthly, plus:</h4>
+                    <ul>
+                        <li class="included">✓ 2 months free (vs monthly)</li>
+                        <li class="included">✓ Implementation plans for ALL themes</li>
+                        <li class="included">✓ Up to 8 strategic plans per report</li>
+                        <li class="included">✓ Priority email support</li>
+                        <li class="included">✓ Early access to new features</li>
+                        <li class="included">✓ Best value for committed firms</li>
+                    </ul>
+                </div>
+                
+                <div class="plan-cta">
+                    {% if current_user.is_authenticated %}
+                        <form method="POST" action="{{ url_for('create_subscription_checkout') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <input type="hidden" name="plan" value="annual">
+                            <button type="submit" class="btn btn-primary btn-block">
+                                Subscribe Annually — $1,290/yr
+                            </button>
+                        </form>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="btn btn-primary btn-block">Log in to Subscribe</a>
+                    {% endif %}
+                    <p class="plan-note">Best value for ongoing improvement</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="pricing-faq">
+    <div class="container">
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        
+        <div class="faq-grid">
+            <div class="faq-item">
+                <h4>Can I upgrade or downgrade my plan?</h4>
+                <p>
+                    Yes, anytime. Upgrades take effect immediately. Downgrades take effect at the start of your 
+                    next billing cycle. No penalties for changing plans.
+                </p>
+            </div>
+            
+            <div class="faq-item">
+                <h4>What's the difference between the plans?</h4>
+                <p>
+                    Free Trial gives you 3 reports to test the platform. One-Time ($49) is perfect for a single 
+                    deep-dive analysis with implementation plans for your top 3 themes. Pro Monthly ($129/mo) 
+                    gives unlimited reports. Pro Annual ($1,290/yr) includes implementation plans for ALL themes 
+                    (up to 8 per report).
+                </p>
+            </div>
+            
+            <div class="faq-item">
+                <h4>Do I need to talk to sales?</h4>
+                <p>
+                    No. All plans are self-service. Sign up, choose your plan, and start analyzing immediately. 
+                    No sales calls, no demos required.
+                </p>
+            </div>
+            
+            <div class="faq-item">
+                <h4>What payment methods do you accept?</h4>
+                <p>
+                    We accept all major credit cards (Visa, Mastercard, Amex, Discover) securely via Stripe.
+                </p>
+            </div>
+            
+            <div class="faq-item">
+                <h4>Is there a setup fee or contract?</h4>
+                <p>
+                    No setup fees. No long-term contracts. All plans are month-to-month or pay-per-report. 
+                    Cancel anytime with no penalty.
+                </p>
+            </div>
+            
+            <div class="faq-item">
+                <h4>Can I try before committing?</h4>
+                <p>
+                    Yes! Start with the free trial to test core functionality with 3 reports. When you're ready, 
+                    upgrade to unlock implementation plans and unlimited reporting.
+                </p>
+            </div>
+            
+            <div class="faq-item">
+                <h4>What happens to my data if I cancel?</h4>
+                <p>
+                    You retain access for 30 days after cancellation. You can export all your data (reviews, reports, 
+                    analysis) during this period. After 30 days, data is permanently deleted from our servers.
+                </p>
+            </div>
+            
+            <div class="faq-item">
+                <h4>Do you offer support?</h4>
+                <p>
+                    Yes. All users have access to email support. Pro Annual subscribers receive priority email 
+                    support with faster response times.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Final CTA -->
+<section class="pricing-final-cta">
+    <div class="container">
+        <div class="cta-box">
+            <h2>Ready to Transform Client Feedback Into Action?</h2>
+            <p>Join law firms using data-driven insights to improve client satisfaction and drive strategic improvements.</p>
+            <div class="cta-buttons">
+                <a href="{{ url_for('register') }}" class="btn btn-primary btn-large">Start Your Free Trial</a>
+                <a href="{{ url_for('how_it_works') }}" class="btn btn-secondary btn-large">See How It Works</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
