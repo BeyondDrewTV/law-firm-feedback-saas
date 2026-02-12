@@ -84,3 +84,24 @@ def test_password_reset_token_single_use(client):
 def test_login_sql_injection_attempt_fails(client):
     resp = client.post('/login', data={'username': "admin' OR 1=1 --", 'password': 'x'}, follow_redirects=True)
     assert b'Sign-in failed' in resp.data
+
+
+def test_health_and_metrics_endpoints(client):
+    h = client.get('/health')
+    assert h.status_code == 200
+    m = client.get('/metrics')
+    assert m.status_code == 200
+
+
+def test_forgot_password_mail_enabled_hides_link(client):
+    client.post('/register', data={
+        'full_name': 'Lawyer Name',
+        'firm_name': 'Firm Name',
+        'email': 'mailtest@example.com',
+        'password': 'StrongPass1',
+        'confirm_password': 'StrongPass1',
+    }, follow_redirects=True)
+    app.config['MAIL_ENABLED'] = True
+    resp = client.post('/forgot-password', data={'email': 'mailtest@example.com'}, follow_redirects=True)
+    assert b'password reset link has been sent' in resp.data.lower()
+    assert b'Reset link:' not in resp.data

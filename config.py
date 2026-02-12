@@ -18,8 +18,13 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY')
     if not SECRET_KEY:
         raise RuntimeError("SECRET_KEY environment variable must be set")
-    DEBUG = os.environ.get('FLASK_ENV') == 'development'
+    APP_ENV = os.environ.get('APP_ENV', 'production')
+    DEBUG = os.environ.get('FLASK_ENV') == 'development' or os.environ.get('FLASK_DEBUG') == '1'
     
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = os.environ.get('SESSION_COOKIE_SAMESITE', 'Lax')
+    SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', '1') == '1'
+
     # Database
     DATABASE_PATH = os.environ.get('DATABASE_PATH') or 'feedback.db'
     
@@ -48,3 +53,14 @@ class Config:
     ONETIME_REPORT_PRICE = int(os.environ.get('ONETIME_REPORT_PRICE', 49))
     MONTHLY_SUBSCRIPTION_PRICE = int(os.environ.get('MONTHLY_SUBSCRIPTION_PRICE', 129))
     ANNUAL_SUBSCRIPTION_PRICE = int(os.environ.get('ANNUAL_SUBSCRIPTION_PRICE', 1290))
+
+    # Mail configuration
+    MAIL_ENABLED = os.environ.get('MAIL_ENABLED', '0') == '1'
+    MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.sendgrid.net')
+    MAIL_PORT = int(os.environ.get('MAIL_PORT', '587'))
+    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', '1') == '1'
+    MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL', '0') == '1'
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'no-reply@example.com')
+    MAIL_MAX_RETRIES = int(os.environ.get('MAIL_MAX_RETRIES', '3'))

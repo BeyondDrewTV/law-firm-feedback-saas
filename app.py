@@ -11,6 +11,7 @@ import secrets
 from io import StringIO
 from datetime import datetime, timedelta, timezone
 from collections import Counter
+from time import perf_counter
 
 from flask import (
     Flask,
@@ -20,6 +21,7 @@ from flask import (
     url_for,
     flash,
     send_file,
+    jsonify,
 )
 from flask_login import (
     LoginManager,
@@ -33,6 +35,7 @@ from flask_wtf.csrf import CSRFProtect
 try:
     from flask_limiter import Limiter
     from flask_limiter.util import get_remote_address
+    LIMITER_AVAILABLE = True
 except Exception:  # noqa: BLE001
     class Limiter:
         def __init__(self, *args, **kwargs):
@@ -46,6 +49,8 @@ except Exception:  # noqa: BLE001
 
     def get_remote_address():
         return request.remote_addr if 'request' in globals() else '127.0.0.1'
+
+    LIMITER_AVAILABLE = False
 
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.exceptions import RequestEntityTooLarge
@@ -64,6 +69,7 @@ from email.utils import parseaddr
 
 from config import Config
 from pdf_generator import generate_pdf_report
+from services.email_service import init_mail, send_password_reset_email, send_verification_email
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -78,6 +84,12 @@ csrf = CSRFProtect(app)
 # Initialize basic rate limiting
 limiter = Limiter(get_remote_address, app=app, default_limits=[])
 
+# Initialize email service
+init_mail(app)
+
+if os.environ.get('FLASK_ENV') == 'production' and not LIMITER_AVAILABLE:
+    raise RuntimeError('flask-limiter must be installed in production environments')
+
 # Configure Stripe
 stripe.api_key = app.config.get('STRIPE_SECRET_KEY')
 
@@ -85,6 +97,29 @@ MAX_CSV_ROWS = 5000
 MAX_REVIEW_TEXT_LENGTH = 5000
 MAX_FIRM_NAME_LENGTH = 120
 EMAIL_REGEX = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+
+REQUEST_METRICS = {
+    'requests_total': 0,
+    'errors_total': 0,
+    'latency_ms_total': 0.0,
+}
+
+
+@app.before_request
+def _metrics_before_request():
+    request._start_ts = perf_counter()
+
+
+@app.after_request
+def _metrics_after_request(response):
+    started = getattr(request, '_start_ts', None)
+    if started is not None:
+        REQUEST_METRICS['requests_total'] += 1
+        elapsed = (perf_counter() - started) * 1000.0
+        REQUEST_METRICS['latency_ms_total'] += elapsed
+        if response.status_code >= 400:
+            REQUEST_METRICS['errors_total'] += 1
+    return response
 
 
 def db_connect():
@@ -855,8 +890,13 @@ def register():
         )
         login_user(user)
         verify_token = create_email_verification_token(user_id)
+        verification_link = url_for('verify_email', token=verify_token, _external=True)
         flash('Account created successfully. Next step: upload your CSV to generate your first report snapshot.', 'success')
-        flash(f'Please verify your email address to secure your account: {url_for("verify_email", token=verify_token, _external=True)}', 'info')
+        if app.config.get('MAIL_ENABLED'):
+            send_verification_email(email, verification_link, sanitized_firm_name)
+            flash('Verification email sent. Check your inbox to activate your account.', 'info')
+        else:
+            flash(f'Please verify your email address to secure your account: {verification_link}', 'info')
         return redirect(url_for('upload'))
 
     return render_template('register.html', errors={})
@@ -961,7 +1001,11 @@ def forgot_password():
             )
             conn.commit()
             reset_link = url_for('reset_password', token=token, _external=True)
-            flash(f'{generic_msg} Reset link: {reset_link}', 'info')
+            if app.config.get('MAIL_ENABLED'):
+                send_password_reset_email(email, reset_link, app.config.get('FIRM_NAME', 'Law Firm'))
+                flash('If that email exists, a password reset link has been sent.', 'info')
+            else:
+                flash(f'{generic_msg} Reset link: {reset_link}', 'info')
         else:
             flash(generic_msg, 'info')
         conn.close()
@@ -1665,6 +1709,22 @@ def export_data():
         download_name=f'user_data_export_{current_user.id}.csv',
         mimetype='text/csv',
     )
+
+@app.route('/health')
+def health():
+    return jsonify({'status': 'ok', 'service': 'law-firm-feedback-saas'}), 200
+
+
+@app.route('/metrics')
+def metrics():
+    total = REQUEST_METRICS['requests_total']
+    avg_latency = (REQUEST_METRICS['latency_ms_total'] / total) if total else 0.0
+    return jsonify({
+        'requests_total': total,
+        'errors_total': REQUEST_METRICS['errors_total'],
+        'avg_latency_ms': round(avg_latency, 2),
+    }), 200
+
 
 # ===== ERROR HANDLERS =====
 
