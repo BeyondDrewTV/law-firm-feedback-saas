@@ -1366,3 +1366,17 @@ body {
     gap: 0.5rem;
   }
 }
+
+
+/* Logout button */
+.logout {
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.logout:hover {
+  filter: brightness(0.92);
+  transform: translateY(-1px);
+}

@@ -80,7 +80,7 @@ def send_verification_email(to_email: str, verification_link: str, firm_name: st
         EmailPayload(
             to_email=to_email,
             subject="Verify your Law Firm Insights account",
-            template_name="email_verification",
+            template_name="verify",
             context={"verification_link": verification_link, "firm_name": firm_name},
         )
     )

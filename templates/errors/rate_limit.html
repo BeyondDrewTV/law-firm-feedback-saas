@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Too Many Requests - Law Firm Insights{% endblock %}
+{% block content %}
+<section class="hero-section">
+  <div class="container" style="max-width:780px;">
+    <div class="hero-content" style="text-align:left;">
+      <h1 class="hero-title">Too many requests</h1>
+      <p class="hero-subtitle">You made too many attempts. Please wait {{ wait_minutes }} minutes before trying again.</p>
+      <p><strong>Rate limit reset timestamp:</strong> {{ reset_timestamp }}</p>
+      <div class="hero-cta">
+        <a href="{{ url_for('forgot_password') }}" class="btn btn-primary btn-hero">Reset password</a>
+        <a href="{{ url_for('login') }}" class="btn btn-secondary btn-hero">Back to login</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

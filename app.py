@@ -1728,6 +1728,16 @@ def metrics():
 
 # ===== ERROR HANDLERS =====
 
+
+@app.errorhandler(429)
+def rate_limited(error):
+    reset_ts = int((datetime.now(timezone.utc) + timedelta(minutes=15)).timestamp())
+    response = render_template('errors/rate_limit.html', reset_timestamp=reset_ts, wait_minutes=15)
+    resp = app.make_response((response, 429))
+    resp.headers['X-RateLimit-Reset'] = str(reset_ts)
+    return resp
+
+
 @app.errorhandler(404)
 def not_found(error):
     return render_template('marketing_home.html'), 404
