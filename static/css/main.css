@@ -1298,3 +1298,71 @@ body {
         transform: none;
     }
 }
+
+/* ===== Dashboard history + account helpers ===== */
+.inline-form { display: inline-block; margin: 0; }
+.table-mobile-wrap { overflow-x: auto; }
+.reports-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.reports-history-table th,
+.reports-history-table td {
+  border-bottom: 1px solid #e9ecef;
+  padding: 0.8rem;
+  text-align: left;
+}
+.plan-badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.plan-trial { background: #ffe5e5; color: #a61b1b; }
+.plan-onetime { background: #fff4dd; color: #8a5a00; }
+.plan-monthly { background: #e3f2ff; color: #0b4f8a; }
+.plan-annual { background: #e8f7e9; color: #1f6b31; }
+
+/* ===== Mobile responsiveness ===== */
+@media (max-width: 768px) {
+  .container { padding-left: 1rem; padding-right: 1rem; }
+  .content-grid,
+  .stats-grid,
+  .dashboard-actions,
+  .cta-buttons,
+  .cta-buttons-large {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .stats-grid .stat-card,
+  .card,
+  .upload-section,
+  .instructions-section {
+    width: 100%;
+  }
+
+  form .form-control,
+  form .form-control-file,
+  form textarea,
+  form select,
+  form button,
+  form .btn {
+    width: 100%;
+  }
+
+  .reports-history-table,
+  table {
+    min-width: 640px;
+  }
+
+  .nav-menu {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}

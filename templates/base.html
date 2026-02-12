@@ -24,8 +24,12 @@
                     <a href="{{ url_for('marketing_home') }}">Home</a>
                     <a href="{{ url_for('dashboard') }}" class="nav-highlight">Dashboard</a>
                     <a href="{{ url_for('upload') }}">Upload Data</a>
+                    <a href="{{ url_for('account') }}">Account</a>
                     <a href="{{ url_for('feedback_form') }}">Feedback Form</a>
-                    <a href="{{ url_for('logout') }}" class="nav-button">Logout</a>
+                    <form method="POST" action="{{ url_for('logout') }}" class="inline-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="nav-button">Logout</button>
+                    </form>
                 {% else %}
                     <!-- Public Menu -->
                     <a href="{{ url_for('marketing_home') }}">Home</a>

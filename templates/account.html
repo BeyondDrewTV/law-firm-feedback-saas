@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Account - Law Firm Insights{% endblock %}
+
+{% block content %}
+<section class="upload-page">
+  <div class="container">
+    <div class="page-header-internal">
+      <div class="header-content">
+        <h1>Account Management</h1>
+        <p class="header-subtitle">Manage your plan, usage, and billing options.</p>
+      </div>
+    </div>
+
+    <div class="content-grid">
+      <div class="card">
+        <h3 class="card-title">Current Plan</h3>
+        <p><strong>{{ current_plan }}</strong></p>
+        <p>{{ account_status.display }}</p>
+        <a href="{{ url_for('pricing') }}" class="btn btn-secondary">View Pricing / Upgrade</a>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Usage</h3>
+        <ul class="requirements-list">
+          <li><strong>Trial reports used:</strong> {{ usage.trial_used }} / {{ usage.trial_limit }}</li>
+          <li><strong>Trial reports remaining:</strong> {{ usage.trial_remaining }}</li>
+          <li><strong>One-time reports purchased:</strong> {{ usage.one_time_purchased }}</li>
+          <li><strong>One-time reports used:</strong> {{ usage.one_time_used }}</li>
+          <li><strong>One-time reports remaining:</strong> {{ usage.one_time_remaining }}</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Billing & Subscription</h3>
+        {% if portal_url %}
+          <p>You have an active subscription. Use Stripe Customer Portal to manage payment method, invoices, or cancellation.</p>
+          <a href="{{ portal_url }}" class="btn btn-primary" target="_blank" rel="noopener">Open Stripe Customer Portal</a>
+          <a href="{{ portal_url }}" class="btn btn-outline" target="_blank" rel="noopener">Cancel Subscription</a>
+        {% else %}
+          <p>No active subscription found for your account.</p>
+          <a href="{{ url_for('pricing') }}" class="btn btn-primary">Start a Paid Plan</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -15,14 +15,17 @@
                     <span class="btn-icon">📤</span> Upload Reviews
                 </a>
                 {% if total_reviews > 0 %}
-                    <a href="{{ url_for('download_pdf') }}" class="btn btn-primary">
+                    <a href="{{ url_for('download_pdf') }}" class="btn btn-primary generate-pdf-btn" onclick="this.dataset.loading='1';this.innerHTML='⏳ Generating report...';">
                         <span class="btn-icon">📄</span> Download PDF Report
                     </a>
                 {% endif %}
+                <form method="POST" action="{{ url_for('clear_reviews') }}" class="inline-form" onsubmit="return confirm('Are you sure you want to delete all reviews? This cannot be undone.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline">🗑️ Clear All Reviews</button>
+                </form>
             </div>
         </div>
 
-        {# Usage Notice for trial accounts #}
         {% if reports_remaining is defined and reports_remaining is not none and not upgrade_needed %}
         <div class="usage-notice">
             <div class="usage-info">
@@ -36,50 +39,36 @@
         {% endif %}
 
         {% if upgrade_needed %}
-            {# Upgrade Required Notice #}
             <div class="upgrade-required-section">
                 <div class="upgrade-card">
                     <div class="upgrade-icon">🔒</div>
                     <h2>Trial Limit Reached</h2>
                     <p class="upgrade-message">
-                        Your free trial report allowance has been fully used. Upgrade to a paid plan to unlock unlimited 
-                        reports and implementation strategies.
+                        You've used all 3 trial reports. Upgrade to continue generating new reports. You can still view and download your existing reports below.
                     </p>
-                    <div class="upgrade-benefits">
-                        <div class="benefit-item">✓ Unlimited reports per month</div>
-                        <div class="benefit-item">✓ Analyze unlimited reviews</div>
-                        <div class="benefit-item">✓ 90-day implementation plans</div>
-                        <div class="benefit-item">✓ Priority support</div>
-                    </div>
                     <div class="upgrade-cta">
                         <a href="{{ url_for('pricing') }}" class="btn btn-primary btn-large">View Pricing & Upgrade</a>
-                        <p class="upgrade-note">Flexible monthly and annual plans available.</p>
                     </div>
                 </div>
             </div>
+        {% endif %}
 
-        {% elif total_reviews == 0 %}
-            {# Empty State #}
+        {% if total_reviews == 0 %}
             <div class="empty-state-section">
                 <div class="empty-state-card">
                     <div class="empty-icon">📊</div>
                     <h2>No Reviews Yet</h2>
                     <p class="empty-message">
-                        Upload a CSV file with historical reviews or share the feedback form with clients to start analyzing.
+                        No reviews found. Upload a CSV to get started.
                     </p>
                     <div class="empty-actions">
                         <a href="{{ url_for('upload') }}" class="btn btn-primary btn-large">
                             <span class="btn-icon">📤</span> Upload CSV File
                         </a>
-                        <a href="{{ url_for('feedback_form') }}" class="btn btn-outline btn-large">
-                            <span class="btn-icon">💬</span> View Feedback Form
-                        </a>
                     </div>
                 </div>
             </div>
-
         {% else %}
-            {# Summary Statistics #}
             <div class="stats-section">
                 <h2 class="section-heading">Overview</h2>
                 <div class="stats-grid">
@@ -107,93 +96,86 @@
                 </div>
             </div>
 
-                                  {# Key Themes - NO SENTIMENT #}
             {% if themes %}
             <div class="themes-section" style="margin: 40px 0; padding: 30px; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.07);">
-                ...
-            </div>
-            {% else %}
-            <div class="themes-section" style="margin: 40px 0; padding: 30px; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.07);">
-                ...
+                <h2 class="section-heading">Top Themes</h2>
+                <div class="themes-grid">
+                    {% for theme in themes %}
+                    <div class="theme-card">
+                        <h4>{{ theme.name }}</h4>
+                        <p>{{ theme.mentions }} mentions ({{ "%.1f"|format(theme.percentage) }}%)</p>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
             {% endif %}
 
-            {# Top Positive Feedback #}
             {% if top_praise %}
             <div class="feedback-section positive-section">
-                <h2 class="section-heading">
-                    <span class="heading-icon success">✓</span>
-                    Top Positive Feedback
-                </h2>
-                <p class="section-description">
-                    Your highest-rated client experiences
-                </p>
+                <h2 class="section-heading"><span class="heading-icon success">✓</span> Top Positive Feedback</h2>
                 <div class="reviews-list">
                     {% for review in top_praise[:5] %}
                     <div class="review-card positive">
                         <div class="review-header">
-                            <span class="review-rating">
-                                {% for i in range(review.rating) %}★{% endfor %}
-                            </span>
+                            <span class="review-rating">{% for i in range(review.rating) %}★{% endfor %}</span>
                             <span class="review-date">{{ review.date }}</span>
                         </div>
-                        <div class="review-text">
-                            "{{ review.review_text[:300] }}{% if review.review_text|length > 300 %}...{% endif %}"
-                        </div>
+                        <div class="review-text">"{{ review.review_text[:300] }}{% if review.review_text|length > 300 %}...{% endif %}"</div>
                     </div>
                     {% endfor %}
                 </div>
             </div>
             {% endif %}
 
-            {# Areas for Improvement #}
             {% if top_complaints %}
             <div class="feedback-section critical-section">
-                <h2 class="section-heading">
-                    <span class="heading-icon warning">⚠</span>
-                    Opportunities for Enhancement
-                </h2>
-                <p class="section-description">
-                    Feedback highlighting areas where clients experienced challenges
-                </p>
+                <h2 class="section-heading"><span class="heading-icon warning">⚠</span> Opportunities for Enhancement</h2>
                 <div class="reviews-list">
                     {% for review in top_complaints[:5] %}
                     <div class="review-card negative">
                         <div class="review-header">
-                            <span class="review-rating">
-                                {% for i in range(review.rating) %}★{% endfor %}
-                            </span>
+                            <span class="review-rating">{% for i in range(review.rating) %}★{% endfor %}</span>
                             <span class="review-date">{{ review.date }}</span>
                         </div>
-                        <div class="review-text">
-                            "{{ review.review_text[:300] }}{% if review.review_text|length > 300 %}...{% endif %}"
-                        </div>
+                        <div class="review-text">"{{ review.review_text[:300] }}{% if review.review_text|length > 300 %}...{% endif %}"</div>
                     </div>
                     {% endfor %}
                 </div>
             </div>
             {% endif %}
-
-            {# Action CTA #}
-            <div class="action-cta-section">
-                <div class="action-cta-card">
-                    <h3>Ready to Generate Your Full Report?</h3>
-                    <p>Download a comprehensive PDF report with all insights, themes, and client feedback analysis.</p>
-                    <a href="{{ url_for('download_pdf') }}" class="btn btn-primary btn-large">
-                        <span class="btn-icon">📄</span> Generate PDF Report
-                    </a>
-                    {% if reports_remaining is defined and reports_remaining is not none %}
-                        <p class="cta-note">
-                            After this report, {{ reports_remaining - 1 }} trial report{{ (reports_remaining - 1) != 1 and 's' or '' }} will remain.
-                        </p>
-                    {% else %}
-                        <p class="cta-note">
-                            Your current plan allows you to generate additional reports at any time.
-                        </p>
-                    {% endif %}
-                </div>
-            </div>
         {% endif %}
+
+        <div class="reports-history-section">
+            <h2 class="section-heading">Reports History</h2>
+            {% if reports_history %}
+                <div class="table-mobile-wrap">
+                    <table class="reports-history-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Reviews Analyzed</th>
+                                <th>Plan at Creation</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in reports_history %}
+                            <tr>
+                                <td>{{ report.created_at }}</td>
+                                <td>{{ report.total_reviews }}</td>
+                                <td><span class="plan-badge plan-{{ (report.subscription_type_at_creation or 'trial')|lower }}">{{ report.plan_label }}</span></td>
+                                <td>
+                                    <a href="{{ url_for('download_report', report_id=report.id) }}" class="btn btn-sm btn-primary" onclick="this.innerText='Generating report...';">Download PDF</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>No report snapshots yet. Upload a CSV to create your first report history entry.</p>
+            {% endif %}
+        </div>
     </div>
 </section>
 {% endblock %}

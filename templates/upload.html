@@ -141,4 +141,17 @@
         </div>
     </div>
 </section>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.querySelector('.upload-form');
+  if (!form) return;
+  form.addEventListener('submit', function () {
+    const btn = form.querySelector('button[type="submit"]');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Processing...';
+    }
+  });
+});
+</script>
 {% endblock %}

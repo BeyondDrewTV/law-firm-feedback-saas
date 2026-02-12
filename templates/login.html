@@ -9,6 +9,7 @@
         <p class="form-description">Sign in to access your feedback analysis dashboard</p>
 
         <form method="POST" action="{{ url_for('login') }}" class="login-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
                 <label for="username">Email address</label>
                 <input type="text" 
@@ -41,7 +42,7 @@
                 <a href="{{ url_for('register') }}" class="link-primary">Sign up for free</a>
             </p>
             <p class="text-center text-muted">
-                <a href="#" class="link-muted">Forgot your password?</a>
+                <a href="{{ url_for('forgot_password') }}" class="link-muted">Forgot your password?</a>
             </p>
             <a href="{{ url_for('marketing_home') }}">← Back to Home</a>
         </div>

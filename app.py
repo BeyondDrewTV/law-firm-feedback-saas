@@ -5,6 +5,7 @@ Main application with routes for client feedback, admin CSV upload, analysis, an
 
 import os
 import csv
+import json
 from io import StringIO
 from datetime import datetime
 from collections import Counter
@@ -27,10 +28,13 @@ from flask_login import (
     current_user,
 )
 from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.exceptions import RequestEntityTooLarge
 import sqlite3
 import stripe
+import bleach
 
 from config import Config
 from pdf_generator import generate_pdf_report
@@ -41,6 +45,9 @@ app.config.from_object(Config)
 
 # Initialize CSRF protection
 csrf = CSRFProtect(app)
+
+# Initialize basic rate limiting
+limiter = Limiter(get_remote_address, app=app, default_limits=[])
 
 # Configure Stripe
 stripe.api_key = app.config.get('STRIPE_SECRET_KEY')
@@ -140,6 +147,24 @@ def init_db():
             subscription_type TEXT DEFAULT 'trial'
         )
     ''')
+
+    # Create report snapshots table
+    c.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            total_reviews INTEGER NOT NULL,
+            avg_rating REAL NOT NULL,
+            themes TEXT,
+            top_praise TEXT,
+            top_complaints TEXT,
+            subscription_type_at_creation TEXT,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+        '''
+    )
 
     # Migration: ensure new pricing / Stripe columns exist on older databases
     c.execute('PRAGMA table_info(users)')
@@ -367,6 +392,70 @@ def analyze_reviews():
         'all_reviews': reviews  # keep full set for reference
     }
 
+
+def _serialize_report_data(data):
+    return json.dumps(data, ensure_ascii=False)
+
+
+def _deserialize_report_data(data, fallback):
+    if not data:
+        return fallback
+    try:
+        return json.loads(data)
+    except (TypeError, json.JSONDecodeError):
+        return fallback
+
+
+def save_report_snapshot(user_id):
+    """Capture the current analysis view and store as a downloadable report snapshot."""
+    analysis = analyze_reviews()
+    if analysis['total_reviews'] == 0:
+        return None
+
+    conn = sqlite3.connect(app.config['DATABASE_PATH'])
+    c = conn.cursor()
+    c.execute('SELECT subscription_type FROM users WHERE id = ?', (user_id,))
+    row = c.fetchone()
+    subscription_type = row[0] if row else 'trial'
+
+    c.execute(
+        '''
+        INSERT INTO reports (
+            user_id,
+            total_reviews,
+            avg_rating,
+            themes,
+            top_praise,
+            top_complaints,
+            subscription_type_at_creation
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''',
+        (
+            user_id,
+            analysis['total_reviews'],
+            analysis['avg_rating'],
+            _serialize_report_data(analysis['themes']),
+            _serialize_report_data(analysis['top_praise']),
+            _serialize_report_data(analysis['top_complaints']),
+            subscription_type,
+        ),
+    )
+    report_id = c.lastrowid
+    conn.commit()
+    conn.close()
+    return report_id
+
+
+def _plan_badge_label(plan_type):
+    labels = {
+        'trial': 'Trial',
+        'onetime': 'One-Time',
+        'monthly': 'Pro Monthly',
+        'annual': 'Pro Annual',
+    }
+    return labels.get(plan_type or 'trial', 'Trial')
+
 # ===== PUBLIC / MARKETING ROUTES =====
 
 @app.route("/")
@@ -444,11 +533,13 @@ def feedback_form():
             flash('Rating must be between 1 and 5.', 'danger')
             return redirect(url_for('feedback_form'))
 
+        sanitized_review_text = bleach.clean(review_text, strip=True)
+
         conn = sqlite3.connect(app.config['DATABASE_PATH'])
         c = conn.cursor()
         c.execute(
             'INSERT INTO reviews (date, rating, review_text) VALUES (?, ?, ?)',
-            (date, rating, review_text)
+            (date, rating, sanitized_review_text)
         )
         conn.commit()
         conn.close()
@@ -542,6 +633,7 @@ def register():
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit('5 per 15 minutes')
 def login():
     """Login page for firm administrators and trial accounts."""
     if current_user.is_authenticated:
@@ -566,21 +658,159 @@ def login():
             user = load_user(user_data[0])
             if user:
                 login_user(user)
-                flash('You are now signed in.', 'success')
+                flash('You are now signed in. Next step: upload a CSV or visit your dashboard for recent reports.', 'success')
                 return redirect(url_for('dashboard'))
 
-        flash('Invalid email address or password.', 'danger')
+        flash('Sign-in failed. Check your email/password and try again. If you forgot your password, contact support.', 'danger')
         return redirect(url_for('login'))
 
     return render_template('login.html')
 
-@app.route('/logout')
+@app.route('/logout', methods=['POST'])
 @login_required
 def logout():
     """Admin logout"""
     logout_user()
     flash('You have been signed out.', 'info')
     return redirect(url_for('marketing_home'))
+
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    """Password reset request page."""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        if email:
+            conn = sqlite3.connect(app.config['DATABASE_PATH'])
+            c = conn.cursor()
+            c.execute('SELECT id FROM users WHERE email = ? OR username = ?', (email, email))
+            user_row = c.fetchone()
+            conn.close()
+            # Always show the same message to prevent email enumeration
+            if user_row:
+                import secrets as _secrets
+                token = _secrets.token_urlsafe(32)
+                conn = sqlite3.connect(app.config['DATABASE_PATH'])
+                c = conn.cursor()
+                # Store token — add column if not present
+                try:
+                    c.execute('ALTER TABLE users ADD COLUMN reset_token TEXT')
+                    c.execute('ALTER TABLE users ADD COLUMN reset_token_expiry TEXT')
+                except Exception:
+                    pass
+                from datetime import timedelta
+                expiry = (datetime.now() + timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')
+                c.execute(
+                    'UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE id = ?',
+                    (token, expiry, user_row[0]),
+                )
+                conn.commit()
+                conn.close()
+                # In production, email the link. For now, flash it for development.
+                reset_link = url_for('reset_password', token=token, _external=True)
+                flash(
+                    f'If that email exists, a reset link has been sent. '
+                    f'(Dev mode: <a href="{reset_link}">click here</a>)',
+                    'info',
+                )
+            else:
+                flash('If that email exists, a reset link has been sent.', 'info')
+        return redirect(url_for('login'))
+
+    return render_template('forgot_password.html')
+
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    """Password reset form (linked from email)."""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+
+    conn = sqlite3.connect(app.config['DATABASE_PATH'])
+    c = conn.cursor()
+    try:
+        c.execute(
+            'SELECT id, reset_token_expiry FROM users WHERE reset_token = ?',
+            (token,),
+        )
+    except Exception:
+        conn.close()
+        flash('This reset link is invalid or has expired.', 'danger')
+        return redirect(url_for('forgot_password'))
+
+    row = c.fetchone()
+    conn.close()
+
+    if not row:
+        flash('This reset link is invalid or has expired.', 'danger')
+        return redirect(url_for('forgot_password'))
+
+    user_id, expiry_str = row
+    try:
+        expiry = datetime.strptime(expiry_str, '%Y-%m-%d %H:%M:%S')
+        if datetime.now() > expiry:
+            flash('This reset link has expired. Please request a new one.', 'danger')
+            return redirect(url_for('forgot_password'))
+    except Exception:
+        flash('This reset link is invalid.', 'danger')
+        return redirect(url_for('forgot_password'))
+
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        confirm = request.form.get('confirm_password', '')
+
+        if len(password) < 8:
+            flash('Password must be at least 8 characters.', 'danger')
+            return render_template('reset_password.html', token=token)
+
+        if password != confirm:
+            flash('Passwords do not match.', 'danger')
+            return render_template('reset_password.html', token=token)
+
+        new_hash = generate_password_hash(password)
+        conn = sqlite3.connect(app.config['DATABASE_PATH'])
+        c = conn.cursor()
+        c.execute(
+            'UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?',
+            (new_hash, user_id),
+        )
+        conn.commit()
+        conn.close()
+        flash('Password updated successfully. Please sign in.', 'success')
+        return redirect(url_for('login'))
+
+    return render_template('reset_password.html', token=token)
+
+
+@app.route('/export-data')
+@login_required
+def export_data():
+    """Export the current user's review data as a CSV download."""
+    import io as _io
+    conn = sqlite3.connect(app.config['DATABASE_PATH'])
+    c = conn.cursor()
+    c.execute('SELECT date, rating, review_text, created_at FROM reviews ORDER BY created_at DESC')
+    rows = c.fetchall()
+    conn.close()
+
+    output = _io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['date', 'rating', 'review_text', 'created_at'])
+    for row in rows:
+        writer.writerow(row)
+    output.seek(0)
+
+    from flask import Response
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={
+            'Content-Disposition': f'attachment; filename=my_reviews_{datetime.now().strftime("%Y%m%d")}.csv'
+        },
+    )
 
 # ===== ADMIN ROUTES =====
 
@@ -612,6 +842,38 @@ def dashboard():
         for name, mentions in themes_dict.items()
     ]
 
+    conn = sqlite3.connect(app.config['DATABASE_PATH'])
+    c = conn.cursor()
+    c.execute(
+        '''
+        SELECT id, created_at, total_reviews, subscription_type_at_creation
+        FROM reports
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+        ''',
+        (current_user.id,),
+    )
+    report_rows = c.fetchall()
+    conn.close()
+
+    reports_history = []
+    for row in report_rows:
+        try:
+            dt = datetime.strptime(row[1], '%Y-%m-%d %H:%M:%S')
+            formatted_date = dt.strftime('%b %d, %Y at %I:%M %p')
+        except Exception:
+            formatted_date = row[1]
+
+        reports_history.append(
+            {
+                'id': row[0],
+                'created_at': formatted_date,
+                'total_reviews': row[2],
+                'subscription_type_at_creation': row[3],
+                'plan_label': _plan_badge_label(row[3]),
+            }
+        )
+
     return render_template(
         'report_results.html',
         total_reviews=analysis['total_reviews'],
@@ -623,7 +885,20 @@ def dashboard():
         reports_remaining=reports_remaining,
         upgrade_needed=upgrade_needed,
         limited=limited,
+        reports_history=reports_history,
     )
+
+
+@app.route('/clear-reviews', methods=['POST'])
+@login_required
+def clear_reviews():
+    conn = sqlite3.connect(app.config['DATABASE_PATH'])
+    c = conn.cursor()
+    c.execute('DELETE FROM reviews')
+    conn.commit()
+    conn.close()
+    flash('All reviews were cleared successfully. Next step: upload a new CSV to generate fresh insights.', 'success')
+    return redirect(url_for('dashboard'))
 
 # ===== STRIPE PRICING ROUTES =====
 
@@ -820,20 +1095,20 @@ def upload():
 
     if request.method == 'POST':
         if not can_upload:
-            flash('You have no remaining report credits. Please select a plan or purchase an additional report.', 'warning')
+            flash('You have no remaining report credits. Upgrade or purchase a one-time report to generate new snapshots.', 'warning')
             return redirect(url_for('pricing'))
 
         if 'file' not in request.files:
-            flash('No file uploaded.', 'danger')
+            flash('No CSV file was detected in the upload request. Please choose a file and try again.', 'danger')
             return redirect(url_for('upload'))
 
         file = request.files['file']
         if file.filename == '':
-            flash('No file selected.', 'danger')
+            flash('No file selected. Choose a CSV file with date, rating, and review_text columns.', 'danger')
             return redirect(url_for('upload'))
 
         if not file.filename.lower().endswith('.csv'):
-            flash('Please upload a CSV file.', 'danger')
+            flash('Unsupported file type. Please upload a .csv file and try again.', 'danger')
             return redirect(url_for('upload'))
 
         try:
@@ -842,7 +1117,7 @@ def upload():
             reader = csv.DictReader(csv_file)
 
             if not reader.fieldnames or not all(col in reader.fieldnames for col in ['date', 'rating', 'review_text']):
-                flash('The CSV file must include the header columns: date, rating, review_text.', 'danger')
+                flash('CSV header mismatch. Include exactly: date, rating, review_text. Then re-upload your file.', 'danger')
                 return redirect(url_for('upload'))
 
             conn = sqlite3.connect(app.config['DATABASE_PATH'])
@@ -856,13 +1131,26 @@ def upload():
                         if 1 <= rating <= 5:
                             c.execute(
                                 'INSERT INTO reviews (date, rating, review_text) VALUES (?, ?, ?)',
-                                (row['date'], rating, row['review_text'])
+                                (row['date'], rating, bleach.clean(row['review_text'], strip=True))
                             )
                             count += 1
                     except ValueError:
                         continue
 
-            # Update usage counters based on tier
+            if count == 0:
+                conn.close()
+                flash('No valid review rows were found. Fix the CSV values and upload again.', 'warning')
+                return redirect(url_for('upload'))
+
+            conn.commit()
+            conn.close()
+
+            snapshot_report_id = save_report_snapshot(current_user.id)
+
+            conn = sqlite3.connect(app.config['DATABASE_PATH'])
+            c = conn.cursor()
+
+            # Update usage counters only after report snapshot is saved
             if current_user.has_active_subscription():
                 report_type = current_user.subscription_type
             elif current_user.has_unused_one_time_reports():
@@ -889,11 +1177,19 @@ def upload():
             conn.commit()
             conn.close()
 
-            flash(f'Successfully imported {count} reviews using your {report_type} access.', 'success')
+            if not snapshot_report_id:
+                flash('Upload succeeded, but no snapshot was created because no analyzable reviews were found.', 'warning')
+                return redirect(url_for('dashboard'))
+
+            flash(
+                f'Success! Imported {count} reviews and saved report snapshot #{snapshot_report_id}. '
+                'Next step: open your dashboard to download this report anytime.',
+                'success',
+            )
             return redirect(url_for('dashboard'))
 
         except Exception:
-            flash('An unexpected error occurred while processing the CSV file. Please try again or contact support.', 'danger')
+            flash('We could not process that CSV upload. Please verify the file format and try again.', 'danger')
             return redirect(url_for('upload'))
 
     return render_template(
@@ -909,7 +1205,7 @@ def download_pdf():
     analysis = analyze_reviews()
 
     if analysis['total_reviews'] == 0:
-        flash('No reviews available to generate report.', 'warning')
+        flash('No reviews found. Upload a CSV to get started, then try generating a PDF again.', 'warning')
         return redirect(url_for('dashboard'))
 
     # Enrich themes with percentage values for the PDF
@@ -951,6 +1247,100 @@ def download_pdf():
         mimetype='application/pdf'
     )
 
+
+@app.route('/download-report/<int:report_id>')
+@login_required
+def download_report(report_id):
+    conn = sqlite3.connect(app.config['DATABASE_PATH'])
+    c = conn.cursor()
+    c.execute(
+        '''
+        SELECT id, user_id, created_at, total_reviews, avg_rating, themes, top_praise, top_complaints
+        FROM reports
+        WHERE id = ?
+        ''',
+        (report_id,),
+    )
+    report = c.fetchone()
+    conn.close()
+
+    if not report or report[1] != current_user.id:
+        flash('That report was not found for your account. Please choose a report from your history list.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    raw_themes = _deserialize_report_data(report[5], {})
+    themes = []
+    total_mentions = sum(raw_themes.values()) or 1
+    for name, mentions in raw_themes.items():
+        themes.append(
+            {
+                'name': name,
+                'mentions': int(mentions),
+                'percentage': (int(mentions) / total_mentions) * 100.0,
+            }
+        )
+
+    top_praise = _deserialize_report_data(report[6], [])
+    top_complaints = _deserialize_report_data(report[7], [])
+    is_paid_user = current_user.has_active_subscription() or current_user.has_unused_one_time_reports()
+    subscription_type = (
+        current_user.subscription_type
+        if current_user.has_active_subscription()
+        else ('onetime' if current_user.has_unused_one_time_reports() else 'trial')
+    )
+
+    pdf_buffer = generate_pdf_report(
+        firm_name=current_user.firm_name or app.config['FIRM_NAME'],
+        total_reviews=report[3],
+        avg_rating=report[4],
+        themes=themes,
+        top_praise=top_praise,
+        top_complaints=top_complaints,
+        is_paid_user=is_paid_user,
+        subscription_type=subscription_type,
+        analysis_period=None,
+    )
+
+    return send_file(
+        pdf_buffer,
+        as_attachment=True,
+        download_name=f'feedback_report_snapshot_{report_id}.pdf',
+        mimetype='application/pdf',
+    )
+
+
+@app.route('/account')
+@login_required
+def account():
+    account_status = current_user.get_account_status()
+    portal_url = None
+    if current_user.stripe_customer_id and current_user.has_active_subscription():
+        try:
+            session = stripe.billing_portal.Session.create(
+                customer=current_user.stripe_customer_id,
+                return_url=url_for('account', _external=True),
+            )
+            portal_url = session.url
+        except Exception:
+            portal_url = None
+
+    usage = {
+        'trial_used': current_user.trial_reviews_used,
+        'trial_limit': current_user.trial_limit,
+        'trial_remaining': max(0, current_user.trial_limit - current_user.trial_reviews_used),
+        'one_time_purchased': current_user.one_time_reports_purchased,
+        'one_time_used': current_user.one_time_reports_used,
+        'one_time_remaining': current_user.get_remaining_one_time_reports(),
+    }
+
+    return render_template(
+        'account.html',
+        account_status=account_status,
+        usage=usage,
+        current_plan=_plan_badge_label(current_user.subscription_type),
+        portal_url=portal_url,
+    )
+
 # ===== ERROR HANDLERS =====
 
 @app.errorhandler(404)
@@ -959,12 +1349,12 @@ def not_found(error):
 
 @app.errorhandler(500)
 def internal_error(error):
-    flash('An unexpected error occurred. Our team has been notified.', 'danger')
+    flash('An unexpected server error occurred. Please retry in a moment. If it persists, contact support.', 'danger')
     return render_template('marketing_home.html'), 500
 
 @app.errorhandler(RequestEntityTooLarge)
 def file_too_large(error):
-    flash('The uploaded file exceeds the 10 MB size limit.', 'danger')
+    flash('Upload failed: file exceeds the 10 MB limit. Compress or split the CSV and try again.', 'danger')
     return redirect(request.referrer or url_for('upload')), 413
 
 # ===== APPLICATION ENTRY POINT =====
