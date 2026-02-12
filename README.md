@@ -83,6 +83,11 @@ pytest tests/
 
 ## Deployment
 
+## Launch runbook
+
+For production go-live, use the launch checklist at [`docs/launch-day-runbook.md`](docs/launch-day-runbook.md).
+
+
 ### Render/Railway
 
 1. Connect your Git repository
