@@ -84,7 +84,7 @@ stripe.api_key = app.config.get('STRIPE_SECRET_KEY')
 MAX_CSV_ROWS = 5000
 MAX_REVIEW_TEXT_LENGTH = 5000
 MAX_FIRM_NAME_LENGTH = 120
-EMAIL_REGEX = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')  # NOTE: single-backslash escapes in raw string
+EMAIL_REGEX = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 
 
 def db_connect():

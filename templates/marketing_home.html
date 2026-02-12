@@ -3,13 +3,6 @@
 {% block title %}Law Firm Insights - Transform Client Feedback Into Strategic Growth{% endblock %}
 
 {% block content %}
-<section class="marketing-top-actions">
-    <div class="container" style="display:flex; justify-content:flex-end; gap:10px; padding-top:12px;">
-        <a href="{{ url_for('login') }}" class="btn btn-secondary">Login</a>
-        <a href="{{ url_for('register') }}" class="btn btn-primary">Sign Up Free</a>
-    </div>
-</section>
-
 <!-- Hero Section -->
 <section class="hero-section">
     <div class="container">
@@ -20,8 +13,9 @@
                 what's working—and what's costing you referrals, retention, and revenue.
             </p>
             <div class="hero-cta">
-                <a href="{{ url_for('pricing') }}" class="btn btn-primary btn-hero">See Pricing & Plans</a>
-                <a href="{{ url_for('how_it_works') }}" class="btn btn-secondary btn-hero">How It Works</a>
+                <a href="{{ url_for('register') }}" class="btn btn-primary btn-hero">Sign Up Free</a>
+                <a href="{{ url_for('login') }}" class="btn btn-secondary btn-hero">Login</a>
+                <a href="{{ url_for('pricing') }}" class="btn btn-outline btn-hero">See Pricing & Plans</a>
             </div>
             <p class="hero-trust">Trusted by small and mid-sized law firms nationwide</p>
         </div>
