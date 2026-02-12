@@ -120,3 +120,24 @@ def test_webhook_bad_signature_returns_400(client):
     resp = client.post('/stripe-webhook', data='{}', headers={'Stripe-Signature': 'bad'})
     # If webhook secret not set it may be 204; with secret set and bad sig -> 400
     assert resp.status_code in (204, 400)
+
+
+def test_forgot_password_calls_mail_sender(client, monkeypatch):
+    client.post('/register', data={
+        'full_name': 'Mail Test',
+        'firm_name': 'Firm Name',
+        'email': 'smtpcheck@example.com',
+        'password': 'StrongPass1',
+        'confirm_password': 'StrongPass1',
+    }, follow_redirects=True)
+    called = {'v': False}
+
+    def _mock_send(*args, **kwargs):
+        called['v'] = True
+        return True
+
+    import app as app_module
+    monkeypatch.setattr(app_module, 'send_password_reset_email', _mock_send)
+    app.config['MAIL_ENABLED'] = True
+    client.post('/forgot-password', data={'email': 'smtpcheck@example.com'}, follow_redirects=True)
+    assert called['v'] is True

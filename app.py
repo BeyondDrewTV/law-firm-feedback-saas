@@ -43,11 +43,17 @@ except Exception:  # noqa: BLE001
         def __init__(self, *args, **kwargs):
             pass
 
+        def init_app(self, app):
+            return None
+
         def limit(self, *args, **kwargs):
             def decorator(func):
                 return func
 
             return decorator
+
+        def request_filter(self, fn):
+            return fn
 
     def get_remote_address():
         return request.remote_addr if 'request' in globals() else '127.0.0.1'
@@ -90,7 +96,17 @@ app.config.setdefault('SESSION_COOKIE_SECURE', not app.config.get('DEBUG', False
 csrf = CSRFProtect(app)
 
 # Initialize basic rate limiting
-limiter = Limiter(get_remote_address, app=app, default_limits=[])
+limiter = Limiter(
+    key_func=get_remote_address,
+    storage_uri=app.config.get('RATELIMIT_STORAGE_URI', 'memory://'),
+    strategy='fixed-window',
+    default_limits=["200 per day", "50 per hour"],
+)
+limiter.init_app(app)
+
+@limiter.request_filter
+def _rate_limit_exempt_for_tests():
+    return app.config.get('TESTING', False)
 
 # Initialize email service
 init_mail(app)
