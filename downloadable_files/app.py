@@ -30,36 +30,13 @@ from flask_login import (
     current_user,
 )
 from flask_wtf.csrf import CSRFProtect
-try:
-    from flask_limiter import Limiter
-    from flask_limiter.util import get_remote_address
-except Exception:  # noqa: BLE001
-    class Limiter:
-        def __init__(self, *args, **kwargs):
-            pass
-
-        def limit(self, *args, **kwargs):
-            def decorator(func):
-                return func
-
-            return decorator
-
-    def get_remote_address():
-        return request.remote_addr if 'request' in globals() else '127.0.0.1'
-
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.exceptions import RequestEntityTooLarge
 import sqlite3
 import stripe
-try:
-    import bleach
-except Exception:  # noqa: BLE001
-    import html
-
-    class bleach:
-        @staticmethod
-        def clean(value, strip=True):
-            return html.escape(value or '')
+import bleach
 from email.utils import parseaddr
 
 from config import Config
@@ -84,7 +61,7 @@ stripe.api_key = app.config.get('STRIPE_SECRET_KEY')
 MAX_CSV_ROWS = 5000
 MAX_REVIEW_TEXT_LENGTH = 5000
 MAX_FIRM_NAME_LENGTH = 120
-EMAIL_REGEX = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')  # NOTE: single-backslash escapes in raw string
+EMAIL_REGEX = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 
 
 def db_connect():
