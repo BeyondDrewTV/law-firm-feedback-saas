@@ -91,6 +91,11 @@ app.config.from_object(Config)
 app.config.setdefault('SESSION_COOKIE_HTTPONLY', True)
 app.config.setdefault('SESSION_COOKIE_SAMESITE', 'Lax')
 app.config.setdefault('SESSION_COOKIE_SECURE', not app.config.get('DEBUG', False))
+from datetime import datetime
+
+@app.context_processor
+def inject_current_year():
+    return {"current_year": datetime.utcnow().year}
 
 # Initialize CSRF protection
 csrf = CSRFProtect(app)
@@ -265,10 +270,12 @@ def init_db():
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE,
-            email TEXT UNIQUE,
-            firm_name TEXT,
+            email TEXT UNIQUE NOT NULL,
+            username TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
+            is_verified INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            firm_name TEXT,
             is_admin INTEGER DEFAULT 1,
             trial_reports_used INTEGER DEFAULT 0,
             trial_month TEXT,
@@ -393,8 +400,15 @@ def init_db():
     if not admin_row:
         password_hash = generate_password_hash(app.config['ADMIN_PASSWORD'])
         c.execute(
-            'INSERT INTO users (username, password_hash) VALUES (?, ?)',
-            (app.config['ADMIN_USERNAME'], password_hash)
+            '''INSERT INTO users
+               (email, username, password_hash, is_verified, created_at)
+               VALUES (?, ?, ?, 1, ?)''',
+            (
+                app.config['ADMIN_EMAIL'],
+                app.config['ADMIN_USERNAME'],
+                password_hash,
+                datetime.utcnow().isoformat(),
+            ),
         )
         admin_user_id = c.lastrowid
     else:
@@ -848,6 +862,7 @@ def thank_you():
 
 # ===== ADMIN AUTH ROUTES =====
 
+
 @app.route('/register', methods=['GET', 'POST'])
 @limiter.limit('5 per hour')
 def register():
@@ -896,6 +911,11 @@ def register():
             return redirect(url_for('login'))
 
         password_hash = generate_password_hash(password)
+
+        # NEW: include created_at (and keep everything else)
+        from datetime import datetime
+        created_at = datetime.utcnow().isoformat()
+
         c.execute(
             '''
             INSERT INTO users (
@@ -907,9 +927,10 @@ def register():
                 trial_reviews_used,
                 trial_limit,
                 subscription_status,
-                subscription_type
+                subscription_type,
+                created_at
             )
-            VALUES (?, ?, ?, ?, 0, 0, ?, 'trial', 'trial')
+            VALUES (?, ?, ?, ?, 0, 0, ?, 'trial', 'trial', ?)
             ''',
             (
                 email,
@@ -917,6 +938,7 @@ def register():
                 sanitized_firm_name,
                 password_hash,
                 app.config['FREE_TRIAL_LIMIT'],
+                created_at,
             ),
         )
         user_id = c.lastrowid
@@ -948,7 +970,6 @@ def register():
         return redirect(url_for('upload'))
 
     return render_template('register.html', errors={})
-
 
 @app.route('/verify-email/<token>')
 @limiter.limit('20 per hour')

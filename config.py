@@ -28,6 +28,7 @@ class Config:
     DATABASE_PATH = os.environ.get('DATABASE_PATH') or 'feedback.db'
 
     # Admin credentials
+    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL') or 'founder@lawfirminsights.app'
     ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME') or 'admin'
     ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD') or 'changeme123'
 
