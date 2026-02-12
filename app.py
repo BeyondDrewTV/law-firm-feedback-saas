@@ -451,6 +451,16 @@ def init_db():
     conn.commit()
     conn.close()
 
+
+# Initialize the database at module load time.
+# This runs under Gunicorn (production) AND `python app.py` (local dev) because
+# it executes whenever the module is imported — not just inside __main__.
+# All CREATE TABLE statements use IF NOT EXISTS and all ALTER TABLE calls
+# check for column existence first, so this is fully idempotent and safe to
+# run on every startup against an already-populated database.
+with app.app_context():
+    init_db()
+
 # ===== USER CLASS FOR FLASK-LOGIN =====
 
 class User(UserMixin):
@@ -1824,6 +1834,5 @@ def file_too_large(error):
 # ===== APPLICATION ENTRY POINT =====
 
 if __name__ == '__main__':
-    init_db()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=app.config['DEBUG'])
