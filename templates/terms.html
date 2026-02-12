@@ -1,160 +1,23 @@
 {% extends "base.html" %}
-
 {% block title %}Terms of Service - Law Firm Insights{% endblock %}
-
 {% block content %}
-<section class="legal-page">
-    <div class="container" style="max-width: 900px; padding: 40px 20px;">
-        <h1 style="color: #1a365d; margin-bottom: 20px; font-size: 2.5rem;">Terms of Service</h1>
-        <p style="color: #666; margin-bottom: 10px;"><strong>Last Updated:</strong> February 2026</p>
-        <p style="color: #666; margin-bottom: 30px; font-size: 0.9rem;">
-            This document is provided for informational purposes only and does not constitute legal advice.
-            You should consult with an attorney to ensure these terms and policies meet your specific legal
-            and regulatory requirements.
-        </p>
-
-        <div class="legal-content" style="line-height: 1.8; color: #333;">
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">1. Acceptance of Terms</h2>
-            <p style="margin-bottom: 20px;">
-                By accessing or using Law Firm Insights ("the Service"), you agree to be bound by these Terms of Service.
-                If you do not agree to these terms, please do not use the Service.
-            </p>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">2. Description of Service</h2>
-            <p style="margin-bottom: 20px;">
-                Law Firm Insights provides client feedback analysis services for law firms, including:
-            </p>
-            <ul style="margin-left: 20px; margin-bottom: 20px;">
-                <li style="margin-bottom: 10px;">Bulk upload and analysis of client reviews and feedback</li>
-                <li style="margin-bottom: 10px;">Automated theme detection and sentiment analysis</li>
-                <li style="margin-bottom: 10px;">PDF report generation with actionable insights</li>
-                <li style="margin-bottom: 10px;">Implementation plans and recommendations (paid plans)</li>
-            </ul>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">3. User Accounts</h2>
-            <p style="margin-bottom: 20px;">
-                To use the Service, you must:
-            </p>
-            <ul style="margin-left: 20px; margin-bottom: 20px;">
-                <li style="margin-bottom: 10px;">Provide accurate and complete registration information</li>
-                <li style="margin-bottom: 10px;">Maintain the security of your password</li>
-                <li style="margin-bottom: 10px;">Be responsible for all activity under your account</li>
-                <li style="margin-bottom: 10px;">Notify us promptly of any unauthorized use</li>
-            </ul>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">4. Subscription Plans and Billing</h2>
-            <h3 style="margin-top: 20px; margin-bottom: 10px; font-size: 1.3rem;">Free Trial</h3>
-            <ul style="margin-left: 20px; margin-bottom: 20px;">
-                <li style="margin-bottom: 10px;">3 reports with up to 50 reviews each</li>
-                <li style="margin-bottom: 10px;">No credit card required</li>
-            </ul>
-
-            <h3 style="margin-top: 20px; margin-bottom: 10px; font-size: 1.3rem;">Paid Plans</h3>
-            <ul style="margin-left: 20px; margin-bottom: 20px;">
-                <li style="margin-bottom: 10px;"><strong>One-Time Report:</strong> Single report purchase, no subscription</li>
-                <li style="margin-bottom: 10px;"><strong>Monthly Subscription:</strong> Unlimited reports, billed monthly, cancel anytime</li>
-                <li style="margin-bottom: 10px;"><strong>Annual Subscription:</strong> Unlimited reports, billed annually, cancel anytime with prorated refund</li>
-            </ul>
-
-            <p style="margin-bottom: 20px;">
-                Billing is processed securely through Stripe. You authorize us to charge your payment method for the selected plan.
-            </p>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">5. Cancellation and Refunds</h2>
-            <ul style="margin-left: 20px; margin-bottom: 20px;">
-                <li style="margin-bottom: 10px;">You may cancel your subscription at any time from your account settings.</li>
-                <li style="margin-bottom: 10px;">Monthly subscriptions: Access continues until the end of the current billing period.</li>
-                <li style="margin-bottom: 10px;">Annual subscriptions: Prorated refund may be available upon request, subject to our then‑current refund policy.</li>
-                <li style="margin-bottom: 10px;">
-                    30‑day money‑back guarantee for first‑time purchases of paid plans. This guarantee may be modified or discontinued
-                    for future customers, but any change will not affect refunds already promised for existing purchases.
-                </li>
-            </ul>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">6. Data Ownership and Use</h2>
-            <ul style="margin-left: 20px; margin-bottom: 20px;">
-                <li style="margin-bottom: 10px;">You retain ownership of all client feedback data you upload.</li>
-                <li style="margin-bottom: 10px;">You grant us a license to process your data solely to provide and improve the Service.</li>
-                <li style="margin-bottom: 10px;">You are responsible for ensuring you have the right to upload and analyze the feedback.</li>
-                <li style="margin-bottom: 10px;">We will not use your data for any purpose other than providing the Service to you.</li>
-            </ul>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">7. Prohibited Uses</h2>
-            <p style="margin-bottom: 20px;">You may not:</p>
-            <ul style="margin-left: 20px; margin-bottom: 20px;">
-                <li style="margin-bottom: 10px;">Upload data you do not have the right to use.</li>
-                <li style="margin-bottom: 10px;">Attempt to reverse engineer or copy the Service.</li>
-                <li style="margin-bottom: 10px;">Use the Service for illegal or unauthorized purposes.</li>
-                <li style="margin-bottom: 10px;">Share your account credentials with others.</li>
-                <li style="margin-bottom: 10px;">Circumvent usage limits or technical restrictions.</li>
-            </ul>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">8. Service Availability</h2>
-            <p style="margin-bottom: 20px;">
-                We aim to provide reliable access to the Service, but we do not guarantee uninterrupted availability.
-                We may perform maintenance or experience outages that temporarily limit access.
-            </p>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">9. Intellectual Property</h2>
-            <p style="margin-bottom: 20px;">
-                The Service, including its software, design, and content (excluding your data), is owned by Law Firm Insights
-                and protected by intellectual property laws.
-            </p>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">10. Limitation of Liability</h2>
-            <p style="margin-bottom: 20px;">
-                The Service is provided “as is” and “as available” without warranties of any kind, express or implied.
-                To the maximum extent permitted by law, we are not liable for:
-            </p>
-            <ul style="margin-left: 20px; margin-bottom: 20px;">
-                <li style="margin-bottom: 10px;">Indirect, incidental, or consequential damages.</li>
-                <li style="margin-bottom: 10px;">Loss of profits, data, or business opportunities.</li>
-                <li style="margin-bottom: 10px;">Decisions made based on the analysis provided.</li>
-            </ul>
-            <p style="margin-bottom: 20px;">
-                Our total liability for any claim arising out of or relating to the Service is limited to the amount you paid us
-                for the Service in the 12 months preceding the claim.
-            </p>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">11. Disclaimer</h2>
-            <p style="margin-bottom: 20px;">
-                The insights and recommendations provided by the Service are for informational purposes only.
-                They do not constitute legal, financial, or professional advice. You should consult with appropriate
-                professionals before making business decisions.
-            </p>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">12. Termination</h2>
-            <p style="margin-bottom: 20px;">
-                We may suspend or terminate your account if you violate these Terms or misuse the Service.
-                Upon termination, you will have 30 days to export your data, unless we are legally prohibited from providing access.
-            </p>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">13. Changes to Terms</h2>
-            <p style="margin-bottom: 20px;">
-                We may update these Terms from time to time. Material changes will be communicated via email or within the Service.
-                Continued use after changes become effective constitutes acceptance of the updated Terms.
-            </p>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">14. Governing Law</h2>
-            <p style="margin-bottom: 20px;">
-                These Terms are governed by the laws of the State of Illinois, without regard to its conflict of laws rules.
-                Any disputes will be resolved in the state or federal courts located in Winnebago County, Illinois.
-            </p>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">15. Contact</h2>
-            <p style="margin-bottom: 40px;">
-                For questions about these Terms, contact us at:<br>
-                <strong>Email:</strong> legal@lawfirminsights.com
-                <br>
-                <span style="font-size: 0.9rem; color: #666;">
-                    This legal contact address will be fully activated before broad public launch.
-                </span>
-            </p>
-        </div>
-
-        <div style="text-align: center; margin-top: 60px;">
-            <a href="{{ url_for('marketing_home') }}" class="btn btn-outline">← Back to Home</a>
-        </div>
-    </div>
+<section class="hero-section">
+  <div class="container" style="max-width:900px;">
+    <h1 class="hero-title">Terms of Service</h1>
+    <h3>Service scope</h3>
+    <p>Law Firm Insights provides software for client feedback analysis and report generation.</p>
+    <h3>Accounts and security</h3>
+    <p>You are responsible for safeguarding account credentials and activity under your account.</p>
+    <h3>Billing</h3>
+    <p>Subscriptions and one-time purchases are processed by Stripe. Fees are non-refundable except where required by law or plan policy.</p>
+    <h3>Acceptable use</h3>
+    <p>You agree not to upload unlawful content, attack system availability, or attempt unauthorized access.</p>
+    <h3>Availability and warranties</h3>
+    <p>Service is provided on an "as-is" basis. We strive for uptime but do not guarantee uninterrupted availability.</p>
+    <h3>Limitation of liability</h3>
+    <p>To the maximum extent permitted by law, liability is limited to fees paid in the prior 12 months.</p>
+    <h3>Contact</h3>
+    <p>For legal or support inquiries, use the support email listed on the account page or footer.</p>
+  </div>
 </section>
 {% endblock %}

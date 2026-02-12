@@ -12,6 +12,8 @@ from io import StringIO
 from datetime import datetime, timedelta, timezone
 from collections import Counter
 from time import perf_counter
+import logging
+from logging.handlers import RotatingFileHandler
 
 from flask import (
     Flask,
@@ -71,6 +73,12 @@ from config import Config
 from pdf_generator import generate_pdf_report
 from services.email_service import init_mail, send_password_reset_email, send_verification_email
 
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.flask import FlaskIntegration
+except Exception:  # noqa: BLE001
+    sentry_sdk = None
+
 # Initialize Flask app
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -89,6 +97,24 @@ init_mail(app)
 
 if os.environ.get('FLASK_ENV') == 'production' and not LIMITER_AVAILABLE:
     raise RuntimeError('flask-limiter must be installed in production environments')
+
+os.makedirs(app.config.get('LOG_DIR', 'logs'), exist_ok=True)
+_file_handler = RotatingFileHandler(
+    os.path.join(app.config.get('LOG_DIR', 'logs'), 'app.log'),
+    maxBytes=5 * 1024 * 1024,
+    backupCount=5,
+)
+_file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s'))
+app.logger.setLevel(app.config.get('LOG_LEVEL', 'INFO'))
+if not any(isinstance(h, RotatingFileHandler) for h in app.logger.handlers):
+    app.logger.addHandler(_file_handler)
+
+if sentry_sdk and app.config.get('SENTRY_DSN'):
+    sentry_sdk.init(
+        dsn=app.config.get('SENTRY_DSN'),
+        integrations=[FlaskIntegration()],
+        traces_sample_rate=app.config.get('SENTRY_TRACES_SAMPLE_RATE', 0.1),
+    )
 
 # Configure Stripe
 stripe.api_key = app.config.get('STRIPE_SECRET_KEY')
@@ -376,6 +402,12 @@ def init_db():
             app.config['ADMIN_USERNAME'],
         ),
     )
+
+    # Performance indexes
+    c.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)')
+    c.execute('CREATE INDEX IF NOT EXISTS idx_reports_user_id ON reports(user_id)')
+    c.execute('CREATE INDEX IF NOT EXISTS idx_reviews_created_at ON reviews(created_at)')
+    c.execute('CREATE INDEX IF NOT EXISTS idx_ownership_user_id ON review_ownership(user_id)')
 
     # Backfill ownership for legacy records to default admin owner
     c.execute(

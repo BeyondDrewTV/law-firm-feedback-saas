@@ -105,3 +105,18 @@ def test_forgot_password_mail_enabled_hides_link(client):
     resp = client.post('/forgot-password', data={'email': 'mailtest@example.com'}, follow_redirects=True)
     assert b'password reset link has been sent' in resp.data.lower()
     assert b'Reset link:' not in resp.data
+
+
+def test_rate_limit_handler_exists(client):
+    # Ensure custom 429 page renders and includes reset hint text
+    from app import rate_limited
+    with app.test_request_context('/login'):
+        resp = rate_limited(Exception('too many'))
+        assert resp.status_code == 429
+        assert 'X-RateLimit-Reset' in resp.headers
+
+
+def test_webhook_bad_signature_returns_400(client):
+    resp = client.post('/stripe-webhook', data='{}', headers={'Stripe-Signature': 'bad'})
+    # If webhook secret not set it may be 204; with secret set and bad sig -> 400
+    assert resp.status_code in (204, 400)

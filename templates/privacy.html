@@ -1,108 +1,30 @@
 {% extends "base.html" %}
-
 {% block title %}Privacy Policy - Law Firm Insights{% endblock %}
-
 {% block content %}
-<section class="legal-page">
-    <div class="container" style="max-width: 900px; padding: 40px 20px;">
-        <h1 style="color: #1a365d; margin-bottom: 20px; font-size: 2.5rem;">Privacy Policy</h1>
-        <p style="color: #666; margin-bottom: 10px;">
-            <strong>Last Updated:</strong> February 2026
-        </p>
-        <p style="color: #666; margin-bottom: 30px; font-size: 0.9rem;">
-            This document is provided for informational purposes only and does not constitute legal advice.
-            You should consult with an attorney to ensure these terms and policies meet your specific legal
-            and regulatory requirements.
-        </p>
-
-        <div class="legal-content" style="line-height: 1.8; color: #333;">
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">1. Information We Collect</h2>
-            <p style="margin-bottom: 20px;">
-                Law Firm Insights collects information necessary to provide our client feedback analysis services to law firms:
-            </p>
-            <ul style="margin-left: 20px; margin-bottom: 20px;">
-                <li style="margin-bottom: 10px;"><strong>Account Information:</strong> Firm name, your name, email address, and password (encrypted).</li>
-                <li style="margin-bottom: 10px;"><strong>Client Feedback Data:</strong> Reviews, ratings, dates, and comments uploaded by your firm.</li>
-                <li style="margin-bottom: 10px;"><strong>Usage Data:</strong> Information about how you use our service, including report generation and dashboard access.</li>
-                <li style="margin-bottom: 10px;"><strong>Payment Information:</strong> Processed securely through Stripe. We do not store full credit card details.</li>
-            </ul>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">2. How We Use Your Information</h2>
-            <p style="margin-bottom: 20px;">We use your information to:</p>
-            <ul style="margin-left: 20px; margin-bottom: 20px;">
-                <li style="margin-bottom: 10px;">Provide and improve our feedback analysis services</li>
-                <li style="margin-bottom: 10px;">Generate reports and insights from client feedback data</li>
-                <li style="margin-bottom: 10px;">Process payments and manage subscriptions</li>
-                <li style="margin-bottom: 10px;">Send important service updates and account notifications</li>
-                <li style="margin-bottom: 10px;">Ensure security and prevent fraud</li>
-            </ul>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">3. Data Security</h2>
-            <p style="margin-bottom: 20px;">
-                We implement industry-standard security measures to protect your data:
-            </p>
-            <ul style="margin-left: 20px; margin-bottom: 20px;">
-                <li style="margin-bottom: 10px;">All data transmitted is encrypted using SSL/TLS</li>
-                <li style="margin-bottom: 10px;">Passwords are hashed using secure algorithms</li>
-                <li style="margin-bottom: 10px;">Database access is restricted and monitored</li>
-                <li style="margin-bottom: 10px;">Periodic security reviews and updates appropriate for a small SaaS product</li>
-            </ul>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">4. Data Sharing</h2>
-            <p style="margin-bottom: 20px;">
-                We do not sell, rent, or share your data with third parties, except:
-            </p>
-            <ul style="margin-left: 20px; margin-bottom: 20px;">
-                <li style="margin-bottom: 10px;"><strong>Service Providers:</strong> Stripe for payment processing, hosting providers for infrastructure</li>
-                <li style="margin-bottom: 10px;"><strong>Legal Requirements:</strong> When required by law or to protect our rights</li>
-            </ul>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">5. Your Rights</h2>
-            <p style="margin-bottom: 20px;">You have the right to:</p>
-            <ul style="margin-left: 20px; margin-bottom: 20px;">
-                <li style="margin-bottom: 10px;">Access your personal data</li>
-                <li style="margin-bottom: 10px;">Correct inaccurate data</li>
-                <li style="margin-bottom: 10px;">Request deletion of your account and data</li>
-                <li style="margin-bottom: 10px;">Export your data</li>
-                <li style="margin-bottom: 10px;">Opt-out of marketing communications</li>
-            </ul>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">6. Data Retention</h2>
-            <p style="margin-bottom: 20px;">
-                We retain your data for as long as your account is active. Upon account deletion, we will delete your data within 30 days,
-                except where retention is required by law.
-            </p>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">7. Cookies</h2>
-            <p style="margin-bottom: 20px;">
-                We use essential cookies to maintain your session and preferences. We do not use third-party tracking cookies.
-            </p>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">8. Children's Privacy</h2>
-            <p style="margin-bottom: 20px;">
-                Our service is not intended for individuals under 18 years of age. We do not knowingly collect data from children.
-            </p>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">9. Changes to This Policy</h2>
-            <p style="margin-bottom: 20px;">
-                We may update this privacy policy from time to time. We will notify you of significant changes via email
-                or through our service.
-            </p>
-
-            <h2 style="color: #2c5282; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem;">10. Contact Us</h2>
-            <p style="margin-bottom: 20px;">
-                If you have questions about this privacy policy or your data, please contact us at:
-            </p>
-            <p style="margin-bottom: 40px;">
-                <strong>Email:</strong> privacy@lawfirminsights.com
-                <br>
-                <strong>Address:</strong> [Business mailing address to be added before production launch]
-            </p>
-        </div>
-
-        <div style="text-align: center; margin-top: 60px;">
-            <a href="{{ url_for('marketing_home') }}" class="btn btn-outline">← Back to Home</a>
-        </div>
-    </div>
+<section class="hero-section">
+  <div class="container" style="max-width:900px;">
+    <h1 class="hero-title">Privacy Policy</h1>
+    <p class="hero-subtitle">Effective date: {{ "now"|safe }}</p>
+    <h3>What we collect</h3>
+    <ul>
+      <li>Account data: email, firm name, authentication details.</li>
+      <li>Feedback content uploaded or submitted through forms.</li>
+      <li>Billing metadata from Stripe (customer/subscription IDs).</li>
+      <li>Operational logs and security telemetry.</li>
+    </ul>
+    <h3>How we use data</h3>
+    <ul>
+      <li>Provide dashboard analytics and downloadable reports.</li>
+      <li>Authenticate users and secure accounts.</li>
+      <li>Process payments via Stripe.</li>
+      <li>Send transactional emails (verification, reset, billing notices).</li>
+    </ul>
+    <h3>Processors</h3>
+    <p>We use Stripe for payments and SMTP providers (SendGrid/Mailgun/Gmail SMTP) for transactional emails.</p>
+    <h3>Retention</h3>
+    <p>We retain user-generated data until account deletion requests or policy cutoffs. Billing records may be retained for compliance.</p>
+    <h3>GDPR rights</h3>
+    <p>You can request export/deletion/rectification of personal data. Contact support to submit requests.</p>
+  </div>
 </section>
 {% endblock %}
