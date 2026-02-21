@@ -1,106 +1,523 @@
 {% extends "base.html" %}
 
-{% block title %}Law Firm Insights - Transform Client Feedback Into Strategic Growth{% endblock %}
+{% block title %}Law Firm Insights — Client Feedback Intelligence for Law Firms{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     HERO
+     Brand lockup → one-liner → headline → value-prop list → CTAs → trust row
+     ═══════════════════════════════════════════════════════════ -->
 <section class="hero-section">
-    <div class="container">
-        <div class="hero-content">
-            <h1 class="hero-title">Turn Client Feedback Into Your Firm's Competitive Advantage</h1>
-            <p class="hero-subtitle">
-                Stop losing clients to preventable issues. Law Firm Insights analyzes feedback to identify exactly
-                what's working—and what's costing you referrals, retention, and revenue.
-            </p>
-            <div class="hero-cta">
-                <a href="{{ url_for('register') }}" class="btn btn-primary btn-hero">Sign Up Free</a>
-                <a href="{{ url_for('login') }}" class="btn btn-secondary btn-hero">Login</a>
-                <a href="{{ url_for('pricing') }}" class="btn btn-outline btn-hero">See Pricing & Plans</a>
-            </div>
-            <p class="hero-trust">Trusted by small and mid-sized law firms nationwide</p>
-        </div>
-    </div>
-</section>
-
-<!-- Problem Statement -->
-<section class="problem-section">
-    <div class="container">
-        <h2 class="section-title">Most Law Firms Are Flying Blind on Client Satisfaction</h2>
-        <div class="problem-grid">
-            <div class="problem-card">
-                <div class="problem-icon">😟</div>
-                <h3>Clients leave without telling you why</h3>
-                <p>You hear complaints too late—after they've already told 10 friends not to hire you.</p>
-            </div>
-            <div class="problem-card">
-                <div class="problem-icon">📉</div>
-                <h3>Referrals are declining</h3>
-                <p>Partners can't pinpoint which service gaps are costing you word-of-mouth growth.</p>
-            </div>
-            <div class="problem-card">
-                <div class="problem-icon">⏰</div>
-                <h3>Issues fester for months</h3>
-                <p>Communication breakdowns, billing confusion, and responsiveness problems go unaddressed.</p>
-            </div>
-            <div class="problem-card">
-                <div class="problem-icon">📊</div>
-                <h3>No data for partner meetings</h3>
-                <p>Gut feelings and anecdotes replace hard numbers when discussing firm improvement.</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Solution Overview -->
-<section class="solution-section">
   <div class="container">
-    <div class="solution-content"
-         style="display:flex; flex-wrap:wrap; gap:24px; align-items:flex-start;">
+    <div class="hero-inner reveal">
 
-      <!-- Left: text + button -->
-      <div class="solution-text" style="flex:1 1 260px; min-width:260px;">
-        <h2>Finally: Client Intelligence That Partners Actually Use</h2>
-        <p class="lead">
-          Law Firm Insights automatically analyzes every piece of client feedback—reviews, surveys,
-          intake forms—to show you exactly where to focus your improvement efforts.
-        </p>
-        <ul class="solution-benefits">
-          <li><strong>Automated theme detection</strong> across communication, expertise, cost, responsiveness, and more</li>
-          <li><strong>Partner-ready PDF reports</strong> you can bring to quarterly meetings</li>
-          <li><strong>Action plans with timelines</strong> so you're not just collecting data—you're fixing problems</li>
-          <li><strong>Track progress over time</strong> with quarterly re-assessments</li>
-        </ul>
-        <a href="{{ url_for('features') }}" class="btn btn-primary">Explore All Features →</a>
+      <!-- Brand lockup: establishes product identity above the headline -->
+      <div class="hero-brand-lockup">
+        <div class="hero-brand-icon">⚖️</div>
+        <span class="hero-brand-name">Law Firm Insights</span>
+        <span class="logo-badge">New</span>
       </div>
 
-      <!-- Right: stats card -->
-      <div class="solution-visual"
-           style="flex:0 0 320px; max-width:320px; margin-left:auto;">
-        <div style="width:100%; border:1px solid #e2e8f0; border-radius:12px; padding:16px; background:#ffffff;">
-          <div style="display:flex; gap:12px; margin-bottom:16px;">
-            <div style="flex:1; background:#f8fafc; border-radius:8px; padding:10px;">
-              <div style="font-size:1.4rem; font-weight:700; color:#1a365d;">127</div>
-              <div style="font-size:0.8rem; color:#4a5568;">Reviews Analyzed</div>
+      <!-- One-liner: what the product is, in plain English -->
+      <p class="hero-one-liner">Client feedback intelligence built for solo and small law firms.</p>
+
+      <!-- Primary headline -->
+      <h1 class="hero-title">
+        Know exactly what your<br>clients <em>aren't</em> telling you
+      </h1>
+
+      <!-- Value-prop checklist (replaces long prose subtitle) -->
+      <ul class="hero-value-props">
+        <li>Upload reviews from Google, intake forms, or post-case surveys</li>
+        <li>AI analyzes every sentence across 8 law-firm-specific themes</li>
+        <li>Receive a partner-ready PDF report in under five minutes</li>
+        <li>90-day action plan with owners and timelines — not just findings</li>
+      </ul>
+
+      <!-- Dual CTAs: primary scrolls to report preview, secondary opens signup -->
+      <div class="hero-actions">
+        <a href="#report-section" class="btn btn-gold btn-lg">See a Sample Report ↓</a>
+        <a href="{{ url_for('register') }}" class="btn btn-secondary btn-lg">Start Free — No Card →</a>
+      </div>
+
+      <!-- Reassurance row -->
+      <div class="hero-trust">
+        <span class="hero-trust-item">No credit card required</span>
+        <span class="hero-trust-item">3 reports included free</span>
+        <span class="hero-trust-item">Results in under 5 minutes</span>
+        <span class="hero-trust-item">ABA-compatible data practices</span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     WHY FEEDBACK PROGRAMS FAIL
+     ═══════════════════════════════════════════════════════════ -->
+<section class="problem-section">
+  <div class="container">
+
+    <span class="eyebrow">Why feedback programs fail</span>
+    <h2 class="section-title">Most firms collect reviews — and do nothing with them</h2>
+    <p class="section-intro">
+      Not from lack of interest. The tools don't fit how law firms actually work —
+      and even when you spot a problem, there's rarely a clear path from insight to action.
+    </p>
+
+    <div class="problem-grid">
+
+      <div class="problem-card reveal">
+        <div class="problem-icon">📥</div>
+        <h3>Feedback is scattered across platforms</h3>
+        <p>Google reviews, post-case emails, intake surveys — your client feedback lives in five different places. There's no single picture of what clients actually experienced.</p>
+      </div>
+
+      <div class="problem-card reveal">
+        <div class="problem-icon">⏱️</div>
+        <h3>Manual reading doesn't produce data</h3>
+        <p>Reading 50 reviews takes hours. At the end you have impressions, not numbers. You can't brief partners on "I got the feeling clients are frustrated with billing."</p>
+      </div>
+
+      <div class="problem-card reveal">
+        <div class="problem-icon">📋</div>
+        <h3>Generic surveys miss what matters in law</h3>
+        <p>NPS scores don't explain why. Off-the-shelf tools weren't built for law firm practice areas — they miss billing confusion, case outcome sentiment, and staff responsiveness as distinct themes.</p>
+      </div>
+
+      <div class="problem-card reveal">
+        <div class="problem-icon">📌</div>
+        <h3>Good insights rarely turn into action</h3>
+        <p>Identifying "clients want better communication" is easy. Getting a specific plan with an owner and a deadline — before the next quarter starts — is what almost never happens.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     VALUE STRIP  — honest, specific numbers
+     ═══════════════════════════════════════════════════════════ -->
+<div class="value-strip">
+  <div class="container">
+    <div class="value-strip-inner">
+      <div class="value-strip-cell">
+        <div class="value-strip-num">5 min</div>
+        <div class="value-strip-label">From CSV upload to complete theme analysis</div>
+      </div>
+      <div class="value-strip-cell">
+        <div class="value-strip-num">8</div>
+        <div class="value-strip-label">Law-firm-specific feedback themes detected automatically</div>
+      </div>
+      <div class="value-strip-cell">
+        <div class="value-strip-num">$0</div>
+        <div class="value-strip-label">To start — 3 full analysis reports at no cost</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     HOW IT WORKS — 3-step strip
+     ═══════════════════════════════════════════════════════════ -->
+<section class="steps-section reveal">
+  <div class="container">
+
+    <div class="steps-header">
+      <span class="eyebrow">How it works</span>
+      <h2 class="section-title">From scattered reviews to a structured report in three steps</h2>
+    </div>
+
+    <div class="steps-grid">
+
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <div>
+          <span class="step-label">Collect</span>
+          <h3>Export reviews and upload a CSV</h3>
+        </div>
+        <p>Works with any review source. Export to a simple CSV — date, rating, review text. No integrations, no API keys, no account linking required.</p>
+        <div class="step-arrow">→</div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <div>
+          <span class="step-label">Analyze</span>
+          <h3>Themes detected automatically across every review</h3>
+        </div>
+        <p>Analysis reads every sentence across 8 law-firm-specific themes: Communication, Responsiveness, Billing, Outcome, Professionalism, Staff Support, Compassion, Expertise.</p>
+        <div class="step-arrow">→</div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <div>
+          <span class="step-label">Report</span>
+          <h3>PDF report ready immediately — no waiting</h3>
+        </div>
+        <p>Your dashboard shows results the moment analysis completes. Download the executive PDF with charts, client quotes, and a prioritized 90-day action plan on demand.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     FEATURE ROWS  — deeper product detail
+     ═══════════════════════════════════════════════════════════ -->
+<section class="features-section">
+  <div class="container">
+    <div class="features-header">
+      <span class="eyebrow">What it actually does</span>
+      <h2 class="section-title">Every analysis produces four distinct outputs</h2>
+    </div>
+
+    <!-- Row 1: Theme Detection -->
+    <div class="feature-row reveal">
+      <div class="feature-text">
+        <span class="feature-tag">Output 1 · Analysis</span>
+        <h3>Automated theme detection across every review</h3>
+        <p>
+          Export your client reviews to CSV — from Google, your intake system, or post-case surveys.
+          Upload it and analysis reads every sentence, grouping feedback into 8 law-firm-specific themes:
+          Communication, Responsiveness, Legal Expertise, Case Outcome, Billing Clarity, Professionalism, Compassion, and Staff Support.
+        </p>
+        <div>
+          <div class="feature-why-label">Why this matters</div>
+          <ul class="feature-bullets">
+            <li>
+              <span class="feature-bullet-icon">🏷️</span>
+              Consistent categorization you can't get from reading reviews individually
+            </li>
+            <li>
+              <span class="feature-bullet-icon">📉</span>
+              Negative patterns surface immediately — not buried under 5-star reviews
+            </li>
+            <li>
+              <span class="feature-bullet-icon">⏱️</span>
+              Hours of manual reading condensed into a five-minute upload
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="fv-inner">
+          <div class="fv-header">
+            <span class="fv-title">Theme Breakdown · 94 reviews</span>
+            <span class="fv-badge">Q1 2025</span>
+          </div>
+          <div class="fv-bars">
+            <div class="fv-row"><span class="fv-lbl">Communication</span><div class="fv-track"><div class="fv-fill" style="width:78%"></div></div><span class="fv-val">38</span></div>
+            <div class="fv-row"><span class="fv-lbl">Responsiveness</span><div class="fv-track"><div class="fv-fill" style="width:58%"></div></div><span class="fv-val">27</span></div>
+            <div class="fv-row"><span class="fv-lbl">Professionalism</span><div class="fv-track"><div class="fv-fill" style="width:52%"></div></div><span class="fv-val">24</span></div>
+            <div class="fv-row"><span class="fv-lbl">Billing Clarity</span><div class="fv-track"><div class="fv-fill" style="width:34%"></div></div><span class="fv-val">16</span></div>
+            <div class="fv-row"><span class="fv-lbl">Case Outcome</span><div class="fv-track"><div class="fv-fill" style="width:24%"></div></div><span class="fv-val">11</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Dashboard (flipped) -->
+    <div class="feature-row feature-row--flip reveal">
+      <div class="feature-text">
+        <span class="feature-tag">Output 2 · Dashboard</span>
+        <h3>Your results appear on a clean dashboard — instantly</h3>
+        <p>
+          After upload, your dashboard shows the full theme breakdown, your top positive reviews,
+          and the critical reviews that need attention. See your average rating, total reviews analyzed,
+          and how many distinct themes were detected — all in one view, immediately.
+        </p>
+        <div>
+          <div class="feature-why-label">Why this matters</div>
+          <ul class="feature-bullets">
+            <li>
+              <span class="feature-bullet-icon">📊</span>
+              No waiting for an email — results are in your browser the moment analysis finishes
+            </li>
+            <li>
+              <span class="feature-bullet-icon">🎯</span>
+              Highest-impact issues ranked at the top — know what to address first
+            </li>
+            <li>
+              <span class="feature-bullet-icon">🔒</span>
+              Data stays in your account — only you can see it
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="fv-inner">
+          <div class="fv-header">
+            <span class="fv-title">Dashboard Overview</span>
+            <span class="fv-badge">Live</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+            {% for metric, val in [('Reviews','94'),('Avg Rating','4.1'),('Themes','6')] %}
+            <div style="background:var(--navy-50);border:1px solid var(--navy-100);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-family:'Instrument Serif',serif;font-size:1.375rem;color:var(--navy-800)">{{ val }}</div>
+              <div style="font-size:.6875rem;color:var(--muted);margin-top:2px">{{ metric }}</div>
             </div>
-            <div style="flex:1; background:#f8fafc; border-radius:8px; padding:10px;">
-              <div style="font-size:1.4rem; font-weight:700; color:#1a365d;">4.2</div>
-              <div style="font-size:0.8rem; color:#4a5568;">Average Rating</div>
+            {% endfor %}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            {% for review,stars,tone in [('Great communication throughout the case','★★★★★','positive'),('Billing statements were hard to understand','★★★','negative')] %}
+            <div style="background:{% if tone == 'positive' %}#f0fdf4{% else %}var(--gold-50){% endif %};border:1px solid {% if tone == 'positive' %}#dcfce7{% else %}var(--gold-100){% endif %};border-radius:8px;padding:10px">
+              <div style="font-size:.6875rem;color:var(--gold-500);margin-bottom:3px">{{ stars }}</div>
+              <div style="font-size:.8125rem;color:var(--body);font-style:italic">{{ review }}</div>
             </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3: PDF Report -->
+    <div class="feature-row reveal">
+      <div class="feature-text">
+        <span class="feature-tag">Output 3 · Report</span>
+        <h3>Executive-quality PDF report, generated in one click</h3>
+        <p>
+          Every analysis produces a professionally formatted PDF — cover page, executive summary,
+          theme breakdown with charts, representative client quotes, and a prioritized action plan.
+          Print it, share it, present it at your next partner meeting. No extra formatting required.
+        </p>
+        <div>
+          <div class="feature-why-label">Why this matters</div>
+          <ul class="feature-bullets">
+            <li>
+              <span class="feature-bullet-icon">📄</span>
+              Walk into partner meetings with data — not impressions or anecdotes
+            </li>
+            <li>
+              <span class="feature-bullet-icon">🎯</span>
+              Paid plans include 90-day action roadmaps with specific initiatives and timelines
+            </li>
+            <li>
+              <span class="feature-bullet-icon">📤</span>
+              Shareable with operations, HR, or marketing with no additional formatting
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="fv-inner">
+          <div class="fv-header">
+            <span class="fv-title">Client Feedback Report</span>
+            <span class="fv-badge" style="background:var(--gold-50);color:var(--gold-700);border-color:var(--gold-100)">PDF Ready</span>
+          </div>
+          <div style="background:var(--navy-800);border-radius:8px;padding:12px;margin-bottom:10px">
+            <div style="font-size:.75rem;font-weight:600;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Executive Summary</div>
+            <div style="height:8px;border-radius:4px;background:rgba(255,255,255,.1);width:90%;margin-bottom:5px"></div>
+            <div style="height:8px;border-radius:4px;background:rgba(255,255,255,.1);width:75%;margin-bottom:5px"></div>
+            <div style="height:8px;border-radius:4px;background:rgba(255,255,255,.1);width:82%"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <div style="height:9px;border-radius:4px;background:var(--navy-100);width:88%"></div>
+            <div style="height:9px;border-radius:4px;background:var(--navy-100);width:72%"></div>
+            <div style="height:1px;background:var(--rule);margin:4px 0"></div>
+            <div style="height:9px;border-radius:4px;background:var(--gold-100);width:80%"></div>
+            <div style="height:9px;border-radius:4px;background:var(--gold-100);width:65%"></div>
+            <div style="height:9px;border-radius:4px;background:var(--gold-100);width:74%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 4: Action Plans (flipped) -->
+    <div class="feature-row feature-row--flip reveal">
+      <div class="feature-text">
+        <span class="feature-tag">Output 4 · Paid Plans</span>
+        <h3>From findings to a concrete 90-day improvement roadmap</h3>
+        <p>
+          Monthly and annual subscribers receive a full implementation roadmap: every identified
+          issue mapped to specific action steps, suggested responsible parties, and recommended
+          timelines. Not just insight — a plan you can hand to your team Monday morning.
+        </p>
+        <div>
+          <div class="feature-why-label">Why this matters</div>
+          <ul class="feature-bullets">
+            <li>
+              <span class="feature-bullet-icon">✅</span>
+              Move from "we should improve communication" to specific steps with owners and dates
+            </li>
+            <li>
+              <span class="feature-bullet-icon">👤</span>
+              Clear ownership means changes actually get implemented after the meeting
+            </li>
+            <li>
+              <span class="feature-bullet-icon">📅</span>
+              30/60/90-day timelines prevent findings from sitting in a drawer indefinitely
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="fv-inner">
+          <div class="fv-header">
+            <span class="fv-title">Action Plan · Communication Theme</span>
+            <span class="fv-badge">3 initiatives</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:var(--s3)">
+            {% for num, action, owner, timeline in [
+              ('1','Set a firm-wide 24-hour response standard','Managing Partner','30 days'),
+              ('2','Create case-update email template library','Operations Lead','45 days'),
+              ('3','Implement monthly client touchpoint calendar','All Attorneys','60 days')
+            ] %}
+            <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--bg-soft);border-radius:8px;border:1px solid var(--rule)">
+              <span style="width:22px;height:22px;border-radius:50%;background:var(--navy-800);color:#fff;font-size:.6875rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">{{ num }}</span>
+              <div>
+                <div style="font-size:.875rem;font-weight:600;color:var(--ink);margin-bottom:2px">{{ action }}</div>
+                <div style="font-size:.75rem;color:var(--muted)">Owner: {{ owner }} · {{ timeline }}</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SEE THE REPORT  — placeholder card designed for screenshot drop-in
+     ═══════════════════════════════════════════════════════════ -->
+<section class="report-section" id="report-section">
+  <div class="container">
+    <div class="report-inner">
+
+      <!-- LEFT: visual placeholder
+           When you have a real screenshot, replace the .report-preview-body div
+           with: <img class="report-preview-screenshot-target" src="..." alt="Sample report"> -->
+      <div class="report-mock-wrap reveal">
+        <div class="report-preview-card">
+
+          <!-- Cover page mock -->
+          <div class="report-preview-cover">
+            <span class="report-preview-cover-eyebrow">Law Firm Insights · Confidential</span>
+            <div class="report-preview-cover-title">Client Feedback Analysis<br>— Q1 2025</div>
+            <div class="report-preview-cover-rule"></div>
+            <div class="report-preview-cover-meta">Sample Firm · 94 reviews analyzed</div>
           </div>
 
-          <div style="border-top:1px solid #e2e8f0; padding-top:12px;">
-            <div style="font-size:0.9rem; font-weight:600; color:#1a365d; margin-bottom:8px;">
-              Key Drivers
+          <!-- Placeholder rows (swap this div for a real <img> when ready) -->
+          <div class="report-preview-body">
+            <div class="report-preview-placeholder-row" style="width:88%"></div>
+            <div class="report-preview-placeholder-row" style="width:72%"></div>
+            <div class="report-preview-placeholder-row" style="width:80%;background:var(--navy-100)"></div>
+            <div style="height:1px;background:var(--rule);margin:4px 0"></div>
+            <div class="report-preview-placeholder-row" style="width:76%;background:var(--gold-100)"></div>
+            <div class="report-preview-placeholder-row" style="width:60%;background:var(--gold-100)"></div>
+            <div class="report-preview-placeholder-row" style="width:84%;background:var(--gold-100)"></div>
+          </div>
+          <div class="report-preview-label">Report layout preview · Sample screenshot coming soon</div>
+
+        </div>
+      </div>
+
+      <!-- RIGHT: copy -->
+      <div class="reveal">
+        <span class="eyebrow">The report</span>
+        <h2 class="section-title">The PDF your partners will actually read</h2>
+        <p style="color:var(--body);font-size:.9375rem;line-height:1.75;margin-bottom:var(--s8)">
+          Not a dashboard export. A formatted, printable PDF with an executive summary,
+          theme breakdown charts, representative client quotes, and a concrete action plan —
+          ready to bring to any partner meeting or quarterly business review.
+        </p>
+
+        <span class="report-contents-label">What's inside every report</span>
+        <ul class="report-section-list">
+          <li>
+            <div>
+              <span class="report-section-item-title">Executive Summary</span>
+              <span class="report-section-item-desc">Overall ratings, review volume, and key findings in two concise pages</span>
             </div>
-            <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#2c5282; margin-bottom:4px;">
-              <span>Communication</span><span style="font-weight:700; color:#2b6cb0;">42</span>
+          </li>
+          <li>
+            <div>
+              <span class="report-section-item-title">Theme Breakdown</span>
+              <span class="report-section-item-desc">All 8 themes with frequency, sentiment score, and representative quotes</span>
             </div>
-            <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#2c5282; margin-bottom:4px;">
-              <span>Responsiveness</span><span style="font-weight:700; color:#2b6cb0;">31</span>
+          </li>
+          <li>
+            <div>
+              <span class="report-section-item-title">Client Voice</span>
+              <span class="report-section-item-desc">Verbatim quotes: what clients praise and what they flag, in their own words</span>
             </div>
-            <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#2c5282;">
-              <span>Professionalism</span><span style="font-weight:700; color:#2b6cb0;">28</span>
+          </li>
+          <li>
+            <div>
+              <span class="report-section-item-title">90-Day Action Plan
+                <span class="plan-badge plan-monthly" style="vertical-align:middle;font-size:.625rem;margin-left:4px">Paid plans</span>
+              </span>
+              <span class="report-section-item-desc">Specific initiatives with suggested owners and 30/60/90-day implementation timelines</span>
             </div>
+          </li>
+        </ul>
+
+        <a href="{{ url_for('register') }}" class="btn btn-gold btn-lg" style="margin-top:var(--s2)">
+          Start Free — Get Your Report
+        </a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECURITY / COMPLIANCE
+     ═══════════════════════════════════════════════════════════ -->
+<section class="safety-section">
+  <div class="container">
+    <div class="safety-inner reveal">
+
+      <div class="safety-text">
+        <span class="eyebrow" style="color:rgba(255,255,255,.4)">Security &amp; Compliance</span>
+        <h2>Designed with attorney-client confidentiality in mind</h2>
+        <p>
+          Law firms handle sensitive information. We designed our data practices
+          around that reality — not as an afterthought. Your client data is yours.
+        </p>
+        <div style="margin-top:var(--s8)">
+          <a href="{{ url_for('security') }}" class="btn btn-outline-white btn-lg">Read our security practices →</a>
+        </div>
+      </div>
+
+      <div class="safety-items">
+        <div class="safety-item">
+          <div class="safety-item-icon">🔐</div>
+          <div class="safety-item-text">
+            <strong>Encrypted in transit and at rest</strong>
+            <p>All data is encrypted with TLS 1.2+ in transit and AES-256 at rest. Your client feedback never travels unprotected.</p>
+          </div>
+        </div>
+        <div class="safety-item">
+          <div class="safety-item-icon">📁</div>
+          <div class="safety-item-text">
+            <strong>No client names or case data required</strong>
+            <p>Analysis only needs a date, rating, and review text. We explicitly ask you not to upload personally identifying client information.</p>
+          </div>
+        </div>
+        <div class="safety-item">
+          <div class="safety-item-icon">🗑️</div>
+          <div class="safety-item-text">
+            <strong>You control your data — delete anytime</strong>
+            <p>Clear all uploaded reviews from your account in one click. We do not retain your data beyond your account lifetime.</p>
+          </div>
+        </div>
+        <div class="safety-item">
+          <div class="safety-item-icon">⚖️</div>
+          <div class="safety-item-text">
+            <strong>ABA-aligned professional services practices</strong>
+            <p>Data handling practices designed to be compatible with law firm confidentiality obligations. Review our full privacy policy for detail.</p>
           </div>
         </div>
       </div>
@@ -109,136 +526,129 @@
   </div>
 </section>
 
-<!-- How It Works - Quick Version -->
-<section class="quick-how-section">
-    <div class="container">
-        <h2 class="section-title">Simple Enough for Any Practice</h2>
-        <div class="steps-grid">
-            <div class="step-card">
-                <div class="step-number">1</div>
-                <h3>Collect Feedback</h3>
-                <p>Upload historical reviews or share a simple form with clients. Works with Google Reviews, intake surveys, or manual entry.</p>
-            </div>
-            <div class="step-arrow">→</div>
-            <div class="step-card">
-                <div class="step-number">2</div>
-                <h3>Auto-Analyze</h3>
-                <p>Our system identifies key themes, sentiment patterns, and specific problem areas across all your feedback.</p>
-            </div>
-            <div class="step-arrow">→</div>
-            <div class="step-card">
-                <div class="step-number">3</div>
-                <h3>Get Action Plans</h3>
-                <p>Receive detailed reports with specific improvements ranked by impact. Know exactly what to fix first.</p>
-            </div>
-            <div class="step-arrow">→</div>
-            <div class="step-card">
-                <div class="step-number">4</div>
-                <h3>Track Progress</h3>
-                <p>Re-run analysis quarterly to measure improvement and adjust strategy. Show stakeholders real progress.</p>
-            </div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     WHY WE BUILT THIS — honest origin story, no fake reviews
+     ═══════════════════════════════════════════════════════════ -->
+<section class="founders-section">
+  <div class="container">
+    <div class="founders-inner reveal">
+
+      <div class="founders-text">
+        <span class="founders-badge">Why we built this</span>
+        <h2>Built because we needed it ourselves</h2>
+        <p>
+          Law Firm Insights was built by practicing attorneys who ran into the same problem
+          every small firm faces: a growing pile of client reviews, no systematic way to
+          understand them, and no time to read them one by one.
+        </p>
+        <p>
+          The tools that existed were built for enterprise, required a data team, or cost more
+          than the problem warranted. So we built something that actually fits how solo and
+          small firm attorneys work.
+        </p>
+        <p style="font-style:italic;color:var(--muted)">
+          This is a new product. We're not pretending otherwise. We built it for attorneys
+          like us — and we're improving it with every user who shares feedback.
+        </p>
+      </div>
+
+      <div class="founders-visual">
+        <div class="founders-point">
+          <div class="founders-point-icon">⚖️</div>
+          <div class="founders-point-text">
+            <strong>Attorneys who understand the constraints</strong>
+            <p>Solo and small firm practice means no dedicated ops team, no data analyst, and no time for tools with steep learning curves.</p>
+          </div>
         </div>
-        <div class="cta-center">
-            <a href="{{ url_for('how_it_works') }}" class="btn btn-secondary">See Detailed Walkthrough →</a>
+        <div class="founders-point">
+          <div class="founders-point-icon">🔍</div>
+          <div class="founders-point-text">
+            <strong>Built around how clients actually leave feedback</strong>
+            <p>Google reviews, post-case surveys, intake feedback — whatever format your clients use, it works with a CSV export.</p>
+          </div>
         </div>
+        <div class="founders-point">
+          <div class="founders-point-icon">📋</div>
+          <div class="founders-point-text">
+            <strong>Designed for partner meetings, not data dashboards</strong>
+            <p>The PDF report is built to be printed and presented — not to require explanation or a separate slide deck.</p>
+          </div>
+        </div>
+        <div class="founders-point">
+          <div class="founders-point-icon">🛡️</div>
+          <div class="founders-point-text">
+            <strong>We know what confidentiality means</strong>
+            <p>Every data decision was made with bar rules and client privilege in mind — not bolted on after the fact.</p>
+          </div>
+        </div>
+      </div>
+
     </div>
+  </div>
 </section>
 
-<!-- Use Cases / Who It's For -->
-<section class="audience-section">
-    <div class="container">
-        <h2 class="section-title">Built for Firms That Take Client Experience Seriously</h2>
-        <div class="audience-grid">
-            <div class="audience-card">
-                <h3>Managing Partners</h3>
-                <p>
-                    <strong>Use feedback data in partner meetings</strong> to drive consensus on firm-wide improvements.
-                    Stop relying on anecdotes—make data-driven decisions about hiring, training, and process changes.
-                </p>
-            </div>
-            <div class="audience-card">
-                <h3>Operations Directors</h3>
-                <p>
-                    <strong>Identify bottlenecks before they become crises.</strong> Spot communication gaps,
-                    billing confusion, or intake problems early. Get concrete action plans with timelines and KPIs.
-                </p>
-            </div>
-            <div class="audience-card">
-                <h3>Practice Group Leads</h3>
-                <p>
-                    <strong>Improve your team's client satisfaction scores.</strong> See how your group compares
-                    to firm averages. Address training gaps and celebrate wins with real numbers.
-                </p>
-            </div>
-            <div class="audience-card">
-                <h3>Marketing Teams</h3>
-                <p>
-                    <strong>Extract testimonials and identify referral drivers.</strong> Understand what clients
-                    love most to fuel case studies, website content, and referral partnership strategies.
-                </p>
-            </div>
-        </div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FINAL CTA STRIP
+     ═══════════════════════════════════════════════════════════ -->
+<section class="cta-strip">
+  <div class="container">
+    <h2>Start understanding your clients this week</h2>
+    <p>
+      Upload your reviews and get a complete theme analysis in under five minutes.
+      No setup, no credit card, no commitment.
+    </p>
+    <div class="cta-strip-actions">
+      <a href="{{ url_for('register') }}" class="btn btn-white btn-lg">Get 3 Free Reports</a>
+      <a href="{{ url_for('pricing') }}" class="btn btn-outline-white btn-lg">View Pricing →</a>
     </div>
+    <div class="cta-guarantees">
+      <span class="cta-guarantee-item">3 reports free</span>
+      <span class="cta-guarantee-item">No credit card required</span>
+      <span class="cta-guarantee-item">30-day money-back guarantee</span>
+      <span class="cta-guarantee-item">Cancel anytime</span>
+    </div>
+  </div>
 </section>
 
-<!-- Social Proof / Results -->
-<section class="results-section">
-    <div class="container">
-        <h2 class="section-title">Real Firms, Real Improvements</h2>
-        <div class="results-grid">
-            <div class="result-card">
-                <div class="result-quote">
-                    "We identified a pattern in billing complaints that was costing us referrals.
-                    Fixed it firm-wide in 30 days. Referral rate jumped 40% in Q2."
-                </div>
-                <div class="result-attribution">
-                    — Sarah Mitchell, Managing Partner<br>
-                    <span class="result-firm">Mitchell & Associates (7 attorneys)</span>
-                </div>
-            </div>
-            <div class="result-card">
-                <div class="result-quote">
-                    "The implementation plans gave us a clear roadmap. We went from 'we should improve communication'
-                    to specific actions with owners and deadlines."
-                </div>
-                <div class="result-attribution">
-                    — David Park, Operations Director<br>
-                    <span class="result-firm">Park Legal Group (12 attorneys)</span>
-                </div>
-            </div>
-            <div class="result-card">
-                <div class="result-quote">
-                    "Before Law Firm Insights, I was reading reviews one by one. Now I see patterns instantly.
-                    We're making better decisions about where to invest in training."
-                </div>
-                <div class="result-attribution">
-                    — Jennifer Torres, Partner<br>
-                    <span class="result-firm">Torres Family Law (4 attorneys)</span>
-                </div>
-            </div>
-        </div>
-        <div class="cta-center">
-            <a href="{{ url_for('case_studies') }}" class="btn btn-outline">Read Full Case Studies →</a>
-        </div>
-    </div>
-</section>
 
-<!-- Final CTA -->
-<section class="final-cta-section">
-    <div class="container">
-        <div class="final-cta-content">
-            <h2>Start Understanding Your Clients Better—This Week</h2>
-            <p>
-                No long implementation. No complex setup. Upload your reviews and get actionable insights in minutes.
-            </p>
-            <div class="cta-buttons-large">
-                <a href="{{ url_for('pricing') }}" class="btn btn-primary btn-large">View Pricing & Start Today</a>
-                <a href="{{ url_for('feedback_form') }}" class="btn btn-outline btn-large">Try Client Feedback Form</a>
-            </div>
-            <p class="cta-guarantee">
-                ✓ Cancel anytime · ✓ 30-day money-back guarantee · ✓ No credit card required for trial
-            </p>
-        </div>
-    </div>
-</section>
+<script>
+/* ── Scroll reveal (IntersectionObserver) ─────────────────────────
+   Adds .reveal--visible when an element enters the viewport.
+   Falls back to showing everything if the API isn't available.
+   ──────────────────────────────────────────────────────────────── */
+(() => {
+  const els = document.querySelectorAll('.reveal');
+  if (!els.length) return;
+
+  if (!('IntersectionObserver' in window)) {
+    els.forEach(el => el.classList.add('reveal--visible'));
+    return;
+  }
+
+  const io = new IntersectionObserver(
+    entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('reveal--visible');
+          io.unobserve(e.target);
+        }
+      });
+    },
+    { threshold: 0.08, rootMargin: '0px 0px -32px 0px' }
+  );
+
+  els.forEach(el => io.observe(el));
+
+  /* Immediately reveal anything already in view on load */
+  setTimeout(() => {
+    els.forEach(el => {
+      const r = el.getBoundingClientRect();
+      if (r.top < window.innerHeight) el.classList.add('reveal--visible');
+    });
+  }, 100);
+})();
+</script>
+
 {% endblock %}

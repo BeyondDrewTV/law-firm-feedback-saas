@@ -1,278 +1,172 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up - Law Firm Insights</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .password-strength {
-            height: 4px;
-            transition: all 0.3s;
-        }
-        .strength-weak { background-color: #ef4444; width: 33%; }
-        .strength-medium { background-color: #f59e0b; width: 66%; }
-        .strength-strong { background-color: #10b981; width: 100%; }
-    </style>
-</head>
-<body class="bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-sm border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <a href="/" class="text-2xl font-bold text-indigo-600">⚖️ Law Firm Insights</a>
-                </div>
-                <div class="hidden md:flex space-x-8">
-                    <a href="/" class="text-gray-600 hover:text-indigo-600">Home</a>
-                    <a href="/how-it-works" class="text-gray-600 hover:text-indigo-600">How It Works</a>
-                    <a href="/features" class="text-gray-600 hover:text-indigo-600">Features</a>
-                    <a href="/case-studies" class="text-gray-600 hover:text-indigo-600">Case Studies</a>
-                    <a href="/pricing" class="text-gray-600 hover:text-indigo-600">Pricing</a>
-                    <a href="/feedback" class="text-gray-600 hover:text-indigo-600">Leave Feedback</a>
-                    <a href="/login" class="text-indigo-600 hover:text-indigo-800 font-medium">Login</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="max-w-md mx-auto mt-6 px-4">
-                {% for category, message in messages %}
-                    <div class="{% if category in ['error', 'danger'] %}bg-red-50 border-l-4 border-red-500 text-red-700{% elif category == 'warning' %}bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700{% else %}bg-green-50 border-l-4 border-green-500 text-green-700{% endif %} p-4 rounded-md mb-4">
-                        <p>{{ message }}</p>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
+{% block title %}Start Free Trial — Law Firm Insights{% endblock %}
 
-    <!-- Registration Form -->
-    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-lg">
-            <div>
-                <h2 class="text-center text-3xl font-bold text-gray-900">Create Your Account</h2>
-                <p class="mt-2 text-center text-sm text-gray-600">
-                    Start your free trial - no credit card required
-                </p>
-            </div>
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card" style="max-width:480px">
 
-            <form method="POST" action="/register" class="mt-8 space-y-6" id="registerForm">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                
-                <!-- Firm Name -->
-                <div>
-                    <label for="firm_name" class="block text-sm font-medium text-gray-700 mb-1">
-                        Law Firm Name
-                    </label>
-                    <input 
-                        id="firm_name" 
-                        name="firm_name" 
-                        type="text" 
-                        required
-                        value="{{ request.form.get('firm_name', '') }}"
-                        class="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        placeholder="Smith & Associates Law"
-                        aria-label="Law Firm Name">
-                    {% if errors and errors.firm_name %}
-                        <p class="mt-1 text-sm text-red-600">{{ errors.firm_name }}</p>
-                    {% endif %}
-                </div>
-
-                <!-- Your Name -->
-                <div>
-                    <label for="full_name" class="block text-sm font-medium text-gray-700 mb-1">
-                        Your Full Name
-                    </label>
-                    <input 
-                        id="full_name" 
-                        name="full_name" 
-                        type="text" 
-                        required
-                        value="{{ request.form.get('full_name', '') }}"
-                        class="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        placeholder="John Smith"
-                        aria-label="Your Full Name">
-                    {% if errors and errors.full_name %}
-                        <p class="mt-1 text-sm text-red-600">{{ errors.full_name }}</p>
-                    {% endif %}
-                </div>
-
-                <!-- Email -->
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
-                        Email Address
-                    </label>
-                    <input 
-                        id="email" 
-                        name="email" 
-                        type="email" 
-                        required
-                        value="{{ request.form.get('email', '') }}"
-                        class="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        placeholder="john@smithlaw.com"
-                        aria-label="Email Address">
-                    {% if errors and errors.email %}
-                        <p class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
-                    {% endif %}
-                </div>
-
-                <!-- Password -->
-                <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
-                        Password
-                    </label>
-                    <input 
-                        id="password" 
-                        name="password" 
-                        type="password" 
-                        required
-                        class="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        placeholder="••••••••"
-                        aria-label="Password">
-                    <div class="password-strength mt-2 rounded-full" id="passwordStrength"></div>
-                    <p class="mt-1 text-xs text-gray-500">
-                        Must be at least 8 characters with uppercase, lowercase, and numbers
-                    </p>
-                    {% if errors and errors.password %}
-                        <p class="mt-1 text-sm text-red-600">{{ errors.password }}</p>
-                    {% endif %}
-                </div>
-
-                <!-- Confirm Password -->
-                <div>
-                    <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-1">
-                        Confirm Password
-                    </label>
-                    <input 
-                        id="confirm_password" 
-                        name="confirm_password" 
-                        type="password" 
-                        required
-                        class="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        placeholder="••••••••"
-                        aria-label="Confirm Password">
-                    {% if errors and errors.confirm_password %}
-                        <p class="mt-1 text-sm text-red-600">{{ errors.confirm_password }}</p>
-                    {% endif %}
-                </div>
-
-                <!-- Submit Button -->
-                <div>
-                    <button 
-                        type="submit"
-                        class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150">
-                        Start Free Trial
-                    </button>
-                </div>
-
-                <!-- Login Link -->
-                <div class="text-center">
-                    <p class="text-sm text-gray-600">
-                        Already have an account? 
-                        <a href="/login" class="font-medium text-indigo-600 hover:text-indigo-500">
-                            Sign in
-                        </a>
-                    </p>
-                </div>
-            </form>
-
-            <!-- Trust Signals -->
-            <div class="mt-6 pt-6 border-t border-gray-200">
-                <div class="flex items-center justify-center space-x-2 text-xs text-gray-500">
-                    <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                    </svg>
-                    <span>No credit card required</span>
-                    <span class="mx-2">•</span>
-                    <span>Cancel anytime</span>
-                    <span class="mx-2">•</span>
-                    <span>256-bit SSL secure</span>
-                </div>
-            </div>
-        </div>
+    <div class="auth-card-header">
+      <div class="auth-logo">⚖️</div>
+      <h1>Create your firm account</h1>
+      <p>3 full analysis reports included — no credit card required</p>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-white mt-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div class="grid md:grid-cols-4 gap-8">
-                <div>
-                    <h4 class="text-lg font-semibold mb-4">Law Firm Insights</h4>
-                    <p class="text-gray-400 text-sm">Transform client feedback into strategic improvements for your practice.</p>
-                </div>
-                <div>
-                    <h4 class="text-sm font-semibold mb-4">Product</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="/features" class="text-gray-400 hover:text-white">Features</a></li>
-                        <li><a href="/pricing" class="text-gray-400 hover:text-white">Pricing</a></li>
-                        <li><a href="/how-it-works" class="text-gray-400 hover:text-white">How It Works</a></li>
-                        <li><a href="/case-studies" class="text-gray-400 hover:text-white">Case Studies</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="text-sm font-semibold mb-4">For Clients</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="/feedback" class="text-gray-400 hover:text-white">Leave Feedback</a></li>
-                        <li><a href="/thank-you" class="text-gray-400 hover:text-white">Feedback Confirmation</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="text-sm font-semibold mb-4">For Firms</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="/login" class="text-gray-400 hover:text-white">Admin Login</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="border-t border-gray-800 mt-8 pt-8 text-sm text-gray-400 text-center">
-                <p>© 2026 Law Firm Insights. Professional client feedback intelligence for law firms.</p>
-                <div class="mt-2">
-                    <a href="#" class="hover:text-white">Privacy Policy</a> · 
-                    <a href="#" class="hover:text-white">Terms of Service</a> · 
-                    <a href="#" class="hover:text-white">Security</a>
-                </div>
-            </div>
+    <form method="POST" action="{{ url_for('register') }}" id="registerForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label for="firm_name" class="form-label">Law firm name</label>
+        <input
+          type="text"
+          id="firm_name"
+          name="firm_name"
+          class="form-control"
+          required
+          autofocus
+          value="{{ request.form.get('firm_name', '') }}"
+          placeholder="Smith &amp; Associates Law, PLLC">
+        {% if errors and errors.firm_name %}
+          <span class="form-text" style="color:var(--danger)">{{ errors.firm_name }}</span>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label for="email" class="form-label">Work email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          class="form-control"
+          required
+          autocomplete="email"
+          value="{{ request.form.get('email', '') }}"
+          placeholder="you@lawfirm.com">
+        {% if errors and errors.email %}
+          <span class="form-text" style="color:var(--danger)">{{ errors.email }}</span>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label for="username" class="form-label">Username</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          class="form-control"
+          required
+          autocomplete="username"
+          value="{{ request.form.get('username', '') }}"
+          placeholder="jsmith">
+        {% if errors and errors.username %}
+          <span class="form-text" style="color:var(--danger)">{{ errors.username }}</span>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label for="password" class="form-label">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          class="form-control"
+          required
+          autocomplete="new-password"
+          placeholder="Minimum 8 characters">
+        <div style="height:4px;border-radius:4px;background:var(--rule);margin-top:8px;overflow:hidden">
+          <div id="strengthBar" style="height:100%;width:0;border-radius:4px;transition:all .3s"></div>
         </div>
-    </footer>
+        <span class="form-text">At least 8 characters · One uppercase · One number</span>
+        <div class="info-box" style="margin-top:var(--s3)">
+          <span style="font-size:1rem;flex-shrink:0">🔒</span>
+          <div class="info-content">
+            <strong>Your password is protected.</strong>
+            Passwords are hashed with bcrypt and never stored in plain text.
+            We don't sell or share your account data.
+          </div>
+        </div>
+        {% if errors and errors.password %}
+          <span class="form-text" style="color:var(--danger)">{{ errors.password }}</span>
+        {% endif %}
+      </div>
 
-    <script>
-        // Password strength indicator
-        const passwordInput = document.getElementById('password');
-        const strengthBar = document.getElementById('passwordStrength');
+      <div class="form-group">
+        <label for="confirm_password" class="form-label">Confirm password</label>
+        <input
+          type="password"
+          id="confirm_password"
+          name="confirm_password"
+          class="form-control"
+          required
+          autocomplete="new-password"
+          placeholder="••••••••">
+        <span class="form-text" id="matchMsg"></span>
+        {% if errors and errors.confirm_password %}
+          <span class="form-text" style="color:var(--danger)">{{ errors.confirm_password }}</span>
+        {% endif %}
+      </div>
 
-        passwordInput.addEventListener('input', function() {
-            const password = this.value;
-            let strength = 0;
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitBtn">
+          Create Account — Free
+        </button>
+      </div>
+    </form>
 
-            if (password.length >= 8) strength++;
-            if (password.match(/[a-z]/)) strength++;
-            if (password.match(/[A-Z]/)) strength++;
-            if (password.match(/[0-9]/)) strength++;
-            if (password.match(/[^a-zA-Z0-9]/)) strength++;
+    <div class="auth-footer" style="margin-top:var(--s5)">
+      <p>Already have an account?
+        <a href="{{ url_for('login') }}" class="link-primary">Sign in →</a>
+      </p>
+    </div>
 
-            strengthBar.className = 'password-strength mt-2 rounded-full';
-            if (strength === 0) {
-                strengthBar.classList.add('hidden');
-            } else if (strength <= 2) {
-                strengthBar.classList.add('strength-weak');
-            } else if (strength <= 4) {
-                strengthBar.classList.add('strength-medium');
-            } else {
-                strengthBar.classList.add('strength-strong');
-            }
-        });
+    <div class="auth-trust">
+      <span class="auth-trust-item">No credit card</span>
+      <span class="auth-trust-item">256-bit encryption</span>
+      <span class="auth-trust-item">Cancel anytime</span>
+    </div>
 
-        // Real-time password match validation
-        const confirmPassword = document.getElementById('confirm_password');
-        confirmPassword.addEventListener('input', function() {
-            if (this.value && this.value !== passwordInput.value) {
-                this.classList.add('border-red-500');
-            } else {
-                this.classList.remove('border-red-500');
-            }
-        });
-    </script>
-</body>
-</html>
+  </div>
+</div>
+
+<script>
+(() => {
+  const pwd   = document.getElementById('password');
+  const bar   = document.getElementById('strengthBar');
+  const conf  = document.getElementById('confirm_password');
+  const msg   = document.getElementById('matchMsg');
+
+  pwd?.addEventListener('input', () => {
+    const v = pwd.value;
+    let s = 0;
+    if (v.length >= 8) s++;
+    if (/[a-z]/.test(v)) s++;
+    if (/[A-Z]/.test(v)) s++;
+    if (/[0-9]/.test(v)) s++;
+    if (/[^a-zA-Z0-9]/.test(v)) s++;
+    const pct   = (s / 5) * 100;
+    const color = s <= 2 ? '#ef4444' : s <= 3 ? '#f59e0b' : '#15803d';
+    bar.style.width = pct + '%';
+    bar.style.background = color;
+  });
+
+  conf?.addEventListener('input', () => {
+    if (!conf.value) { msg.textContent = ''; return; }
+    if (conf.value === pwd.value) {
+      msg.style.color = 'var(--success)';
+      msg.textContent = '✓ Passwords match';
+    } else {
+      msg.style.color = 'var(--danger)';
+      msg.textContent = 'Passwords do not match';
+    }
+  });
+
+  document.getElementById('registerForm')?.addEventListener('submit', (e) => {
+    const btn = document.getElementById('submitBtn');
+    if (btn && !btn.disabled) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Creating account…';
+    }
+  });
+})();
+</script>
+{% endblock %}

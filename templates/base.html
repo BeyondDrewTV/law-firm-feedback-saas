@@ -1,139 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Law Firm Insights - Client Feedback Intelligence{% endblock %}</title>
-    <meta name="description" content="Transform client feedback into actionable insights for your law firm. Professional analysis, automated reporting, and data-driven improvements.">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Law Firm Insights — Client Feedback Intelligence{% endblock %}</title>
+  <meta name="description" content="Turn client reviews into a clear improvement plan for your law firm. Automated theme analysis, PDF reports, and actionable recommendations — built by attorneys.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body>
-    <!-- Premium Navigation Bar -->
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand">
-                <a href="{{ url_for('marketing_home') }}">
-                    <span class="logo-icon">⚖️</span>
-                    <span class="logo-text">Law Firm Insights</span>
-                </a>
-            </div>
-            <div class="nav-menu">
-                {% if current_user.is_authenticated %}
-                    <!-- Authenticated User Menu -->
-                    <a href="{{ url_for('marketing_home') }}">Home</a>
-                    <a href="{{ url_for('dashboard') }}" class="nav-highlight">Dashboard</a>
-                    <a href="{{ url_for('upload') }}">Upload Data</a>
-                    <a href="{{ url_for('account') }}">Account</a>
-                    <a href="{{ url_for('feedback_form') }}">Feedback Form</a>
-                    <form method="POST" action="{{ url_for('logout') }}" class="inline-form">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="nav-button">Logout</button>
-                    </form>
-                {% else %}
-                    <!-- Public Menu -->
-                    <a href="{{ url_for('marketing_home') }}">Home</a>
-                    <a href="{{ url_for('how_it_works') }}">How It Works</a>
-                    <a href="{{ url_for('features') }}">Features</a>
-                    <a href="{{ url_for('case_studies') }}">Case Studies</a>
-                    <a href="{{ url_for('pricing') }}">Pricing</a>
-                    <a href="{{ url_for('feedback_form') }}" class="nav-accent">Leave Feedback</a>
-                    <a href="{{ url_for('login') }}" class="nav-button">Login</a>
-                    <a href="{{ url_for('register') }}" class="nav-accent">Sign Up Free</a>
-                {% endif %}
-            </div>
-            
-            <!-- Mobile Menu Toggle -->
-            <button class="mobile-menu-toggle" id="mobileMenuToggle">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-        </div>
-    </nav>
 
-    <!-- Flash Messages -->
-    <div class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-messages">
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">
-                            <span class="alert-icon">
-                                {% if category == 'success' %}✓{% elif category == 'danger' %}✕{% elif category == 'warning' %}⚠{% else %}ℹ{% endif %}
-                            </span>
-                            <span class="alert-message">{{ message }}</span>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
+<!-- ═══════════════════════════ TRUST BAR ════════════════════ -->
+<div class="trust-bar">
+  <span class="trust-bar-item">256-bit Encryption</span>
+  <span class="trust-bar-item">SOC2-Aligned Security Practices</span>
+  <span class="trust-bar-item">ABA-Compatible Data Handling</span>
+  <span class="trust-bar-item">Built by Practicing Attorneys</span>
+  <span class="trust-bar-item">Cancel Anytime</span>
+</div>
+
+<!-- ═══════════════════════════ NAV ═══════════════════════════ -->
+<nav class="navbar">
+  <div class="container">
+    <div class="nav-brand">
+      <a href="{{ url_for('marketing_home') }}" class="logo-lockup">
+        <span class="logo-icon">⚖️</span>
+        <span class="logo-text">Law Firm Insights</span>
+        <span class="logo-badge">New</span>
+      </a>
     </div>
 
-    <!-- Main Content -->
-    <main>
-        {% block content %}{% endblock %}
-    </main>
+    <div class="nav-menu" id="navMenu">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('marketing_home') }}">Home</a>
+        <a href="{{ url_for('dashboard') }}" class="nav-highlight">Dashboard</a>
+        <a href="{{ url_for('upload') }}">Upload Data</a>
+        <a href="{{ url_for('account') }}">Account</a>
+        <a href="{{ url_for('feedback_form') }}" class="nav-accent">Client Survey</a>
+        <form method="POST" action="{{ url_for('logout') }}" class="inline-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="nav-button">Log out</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('how_it_works') }}">How It Works</a>
+        <a href="{{ url_for('features') }}">Features</a>
+        <a href="{{ url_for('pricing') }}">Pricing</a>
+        <a href="{{ url_for('login') }}" class="btn btn-secondary btn-sm">Log in</a>
+        <a href="{{ url_for('register') }}" class="nav-button">Start Free Trial</a>
+      {% endif %}
+    </div>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-grid">
-                <div class="footer-section">
-                    <h4>Law Firm Insights</h4>
-                    <p class="footer-tagline">
-                        Transform client feedback into strategic improvements for your practice.
-                    </p>
-                </div>
-                
-                <div class="footer-section">
-                    <h4>Product</h4>
-                    <ul class="footer-links">
-                        <li><a href="{{ url_for('features') }}">Features</a></li>
-                        <li><a href="{{ url_for('pricing') }}">Pricing</a></li>
-                        <li><a href="{{ url_for('how_it_works') }}">How It Works</a></li>
-                        <li><a href="{{ url_for('case_studies') }}">Case Studies</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-section">
-                    <h4>Get Started</h4>
-                    <ul class="footer-links">
-                        <li><a href="{{ url_for('register') }}">Sign Up</a></li>
-                        <li><a href="{{ url_for('login') }}">Login</a></li>
-                        <li><a href="{{ url_for('feedback_form') }}">Leave Feedback</a></li>
-                        {% if current_user.is_authenticated %}
-                            <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-                        {% endif %}
-                    </ul>
-                </div>
-                
-                <div class="footer-section">
-                    <h4>Company</h4>
-                    <ul class="footer-links">
-                        <li><a href="{{ url_for('privacy') }}">Privacy Policy</a></li>
-                        <li><a href="{{ url_for('terms') }}">Terms of Service</a></li>
-                        <li><a href="{{ url_for('security') }}">Security</a></li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="footer-bottom">
-                <p>&copy; {{ current_year }} Law Firm Insights. Professional client feedback intelligence for law firms.</p>
-                <p class="footer-legal">
-                    <a href="{{ url_for('privacy') }}">Privacy Policy</a> · 
-                    <a href="{{ url_for('terms') }}">Terms of Service</a> · 
-                    <a href="{{ url_for('security') }}">Security</a>
-                </p>
-            </div>
+    <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════ FLASH ════════════════════════ -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="container">
+      <div class="flash-messages">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">
+            <span class="alert-icon">
+              {%- if category == 'success' -%}✓
+              {%- elif category == 'danger' -%}✕
+              {%- elif category == 'warning' -%}⚠
+              {%- else -%}ℹ{%- endif -%}
+            </span>
+            <span>{{ message }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- ═══════════════════════════ CONTENT ══════════════════════ -->
+<main>{% block content %}{% endblock %}</main>
+
+<!-- ═══════════════════════════ FOOTER ═══════════════════════ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-section">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <span style="width:32px;height:32px;border-radius:6px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:.875rem">⚖️</span>
+          <span style="font-family:'Instrument Serif',serif;font-size:1.0625rem;color:rgba(255,255,255,.85)">Law Firm Insights</span>
         </div>
-    </footer>
+        <p class="footer-tagline">Client feedback intelligence designed for solo practitioners and small law firms.</p>
+        <p class="footer-attorney-note">New. Built by solopreneur attorneys for solopreneur attorneys — not a generic SaaS tool.</p>
+        <div class="footer-compliance">
+          <span class="footer-compliance-badge">256-bit Encryption</span>
+          <span class="footer-compliance-badge">ABA-Aligned</span>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h4>Product</h4>
+        <ul class="footer-links">
+          <li><a href="{{ url_for('features') }}">Features</a></li>
+          <li><a href="{{ url_for('pricing') }}">Pricing</a></li>
+          <li><a href="{{ url_for('how_it_works') }}">How It Works</a></li>
+          <li><a href="{{ url_for('case_studies') }}">Case Studies</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Account</h4>
+        <ul class="footer-links">
+          <li><a href="{{ url_for('register') }}">Start Free Trial</a></li>
+          <li><a href="{{ url_for('login') }}">Log In</a></li>
+          <li><a href="{{ url_for('feedback_form') }}">Client Survey Form</a></li>
+          {% if current_user.is_authenticated %}
+            <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+          {% endif %}
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Legal</h4>
+        <ul class="footer-links">
+          <li><a href="{{ url_for('privacy') }}">Privacy Policy</a></li>
+          <li><a href="{{ url_for('terms') }}">Terms of Service</a></li>
+          <li><a href="{{ url_for('security') }}">Security</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© {{ current_year }} Law Firm Insights. All rights reserved.</p>
+      <div class="footer-legal">
+        <a href="{{ url_for('privacy') }}">Privacy</a>
+        <a href="{{ url_for('terms') }}">Terms</a>
+        <a href="{{ url_for('security') }}">Security</a>
+      </div>
+    </div>
+  </div>
+</footer>
 
-    <script>
-        // Mobile menu toggle
-        document.getElementById('mobileMenuToggle')?.addEventListener('click', function() {
-            document.querySelector('.nav-menu').classList.toggle('active');
-        });
-    </script>
+<script>
+  // Mobile nav toggle
+  const toggle = document.getElementById('mobileMenuToggle');
+  const menu   = document.getElementById('navMenu');
+  toggle?.addEventListener('click', () => menu?.classList.toggle('active'));
+  document.querySelectorAll('.nav-menu a, .nav-menu button').forEach(el => {
+    el.addEventListener('click', () => menu?.classList.remove('active'));
+  });
+
+  // Generic loading overlay for any form with data-loading
+  document.querySelectorAll('form[data-loading]').forEach(form => {
+    form.addEventListener('submit', () => {
+      const overlay = document.getElementById('loadingOverlay');
+      if (overlay) overlay.classList.add('active');
+    });
+  });
+</script>
 </body>
 </html>

@@ -1,181 +1,307 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - Law Firm Insights{% endblock %}
+{% block title %}Dashboard — Law Firm Insights{% endblock %}
 
 {% block content %}
 <section class="dashboard-page">
-    <div class="container">
-        <div class="dashboard-header">
-            <div class="header-content">
-                <h1>Client Feedback Analysis Dashboard</h1>
-                <p class="header-subtitle">View insights and generate reports from client feedback</p>
-            </div>
-            <div class="dashboard-actions">
-                <a href="{{ url_for('upload') }}" class="btn btn-secondary">
-                    <span class="btn-icon">📤</span> Upload Reviews
-                </a>
-                {% if total_reviews > 0 %}
-                    <a href="{{ url_for('download_pdf') }}" class="btn btn-primary generate-pdf-btn" onclick="this.dataset.loading='1';this.innerHTML='⏳ Generating report...';">
-                        <span class="btn-icon">📄</span> Download PDF Report
-                    </a>
-                {% endif %}
-                <form method="POST" action="{{ url_for('clear_reviews') }}" class="inline-form" onsubmit="return confirm('Are you sure you want to delete all reviews? This cannot be undone.');">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-outline">🗑️ Clear All Reviews</button>
-                </form>
-            </div>
-        </div>
+  <div class="container">
 
-        {% if reports_remaining is defined and reports_remaining is not none and not upgrade_needed %}
-        <div class="usage-notice">
-            <div class="usage-info">
-                <span class="usage-icon">📊</span>
-                <span class="usage-text">
-                    <strong>Free Trial:</strong> {{ reports_remaining }} report{% if reports_remaining != 1 %}s{% endif %} remaining in your trial
-                </span>
-            </div>
-            <a href="{{ url_for('pricing') }}" class="upgrade-link">Upgrade for unlimited →</a>
-        </div>
+    <!-- ── Page header ──────────────────────────────────── -->
+    <div class="dashboard-header">
+      <div>
+        <h1 style="font-size:clamp(1.5rem,3vw,2rem)">Client Feedback Dashboard</h1>
+        <p class="header-subtitle">Your analysis results and downloadable reports</p>
+      </div>
+      <div class="dashboard-actions">
+        <a href="{{ url_for('upload') }}" class="btn btn-secondary">
+          <span class="btn-icon">📤</span> Upload Reviews
+        </a>
+        {# ── PLUG IN: only shown when data exists ── #}
+        {% if total_reviews > 0 %}
+        <a href="{{ url_for('download_pdf') }}"
+           class="btn btn-teal"
+           id="downloadPdfBtn"
+           onclick="this.innerHTML='⏳ Generating…';this.style.pointerEvents='none'">
+          <span class="btn-icon">📄</span> Download PDF Report
+        </a>
         {% endif %}
-
-        {% if upgrade_needed %}
-            <div class="upgrade-required-section">
-                <div class="upgrade-card">
-                    <div class="upgrade-icon">🔒</div>
-                    <h2>Trial Limit Reached</h2>
-                    <p class="upgrade-message">
-                        You've used all 3 trial reports. Upgrade to continue generating new reports. You can still view and download your existing reports below.
-                    </p>
-                    <div class="upgrade-cta">
-                        <a href="{{ url_for('pricing') }}" class="btn btn-primary btn-large">View Pricing & Upgrade</a>
-                    </div>
-                </div>
-            </div>
-        {% endif %}
-
-        {% if total_reviews == 0 %}
-            <div class="empty-state-section">
-                <div class="empty-state-card">
-                    <div class="empty-icon">📊</div>
-                    <h2>No Reviews Yet</h2>
-                    <p class="empty-message">
-                        No reviews found. Upload a CSV to get started.
-                    </p>
-                    <div class="empty-actions">
-                        <a href="{{ url_for('upload') }}" class="btn btn-primary btn-large">
-                            <span class="btn-icon">📤</span> Upload CSV File
-                        </a>
-                    </div>
-                </div>
-            </div>
-        {% else %}
-            <div class="stats-section">
-                <h2 class="section-heading">Overview</h2>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon">📝</div>
-                        <div class="stat-content">
-                            <div class="stat-value">{{ total_reviews }}</div>
-                            <div class="stat-label">Reviews Analyzed</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">★</div>
-                        <div class="stat-content">
-                            <div class="stat-value">{{ "%.2f"|format(avg_rating) }}</div>
-                            <div class="stat-label">Average Rating</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">🔍</div>
-                        <div class="stat-content">
-                            <div class="stat-value">{{ themes|length }}</div>
-                            <div class="stat-label">Themes Identified</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {% if themes %}
-            <div class="themes-section" style="margin: 40px 0; padding: 30px; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.07);">
-                <h2 class="section-heading">Top Themes</h2>
-                <div class="themes-grid">
-                    {% for theme in themes %}
-                    <div class="theme-card">
-                        <h4>{{ theme.name }}</h4>
-                        <p>{{ theme.mentions }} mentions ({{ "%.1f"|format(theme.percentage) }}%)</p>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            {% if top_praise %}
-            <div class="feedback-section positive-section">
-                <h2 class="section-heading"><span class="heading-icon success">✓</span> Top Positive Feedback</h2>
-                <div class="reviews-list">
-                    {% for review in top_praise[:5] %}
-                    <div class="review-card positive">
-                        <div class="review-header">
-                            <span class="review-rating">{% for i in range(review.rating) %}★{% endfor %}</span>
-                            <span class="review-date">{{ review.date }}</span>
-                        </div>
-                        <div class="review-text">"{{ review.review_text[:300] }}{% if review.review_text|length > 300 %}...{% endif %}"</div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            {% if top_complaints %}
-            <div class="feedback-section critical-section">
-                <h2 class="section-heading"><span class="heading-icon warning">⚠</span> Opportunities for Enhancement</h2>
-                <div class="reviews-list">
-                    {% for review in top_complaints[:5] %}
-                    <div class="review-card negative">
-                        <div class="review-header">
-                            <span class="review-rating">{% for i in range(review.rating) %}★{% endfor %}</span>
-                            <span class="review-date">{{ review.date }}</span>
-                        </div>
-                        <div class="review-text">"{{ review.review_text[:300] }}{% if review.review_text|length > 300 %}...{% endif %}"</div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-        {% endif %}
-
-        <div class="reports-history-section">
-            <h2 class="section-heading">Reports History</h2>
-            {% if reports_history %}
-                <div class="table-mobile-wrap">
-                    <table class="reports-history-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Reviews Analyzed</th>
-                                <th>Plan at Creation</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for report in reports_history %}
-                            <tr>
-                                <td>{{ report.created_at }}</td>
-                                <td>{{ report.total_reviews }}</td>
-                                <td><span class="plan-badge plan-{{ (report.subscription_type_at_creation or 'trial')|lower }}">{{ report.plan_label }}</span></td>
-                                <td>
-                                    <a href="{{ url_for('download_report', report_id=report.id) }}" class="btn btn-sm btn-primary" onclick="this.innerText='Generating report...';">Download PDF</a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <p>No report snapshots yet. Upload a CSV to create your first report history entry.</p>
-            {% endif %}
-        </div>
+        <form method="POST" action="{{ url_for('clear_reviews') }}" class="inline-form"
+              onsubmit="return confirm('Delete all reviews? This cannot be undone.')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-outline">🗑️ Clear All</button>
+        </form>
+      </div>
     </div>
+
+    <!-- ── Trial usage notice ───────────────────────────── -->
+    {# ── PLUG IN: reports_remaining and upgrade_needed from your view ── #}
+    {% if reports_remaining is defined and reports_remaining is not none and not upgrade_needed %}
+    <div class="usage-notice">
+      <div class="usage-info">
+        <span>📊</span>
+        <span>
+          <strong>Free Trial:</strong>
+          {{ reports_remaining }} report{% if reports_remaining != 1 %}s{% endif %} remaining
+        </span>
+      </div>
+      <a href="{{ url_for('pricing') }}" class="upgrade-link">Upgrade for unlimited →</a>
+    </div>
+    {% endif %}
+
+
+    <!-- ── UPGRADE WALL (trial exhausted) ──────────────── -->
+    {% if upgrade_needed %}
+    <div class="upgrade-required-section">
+      <div class="upgrade-card">
+        <span class="upgrade-icon">🔒</span>
+        <h2>Trial Limit Reached</h2>
+        <p class="upgrade-message">
+          You've used all 3 trial reports. Upgrade to generate new reports.
+          Your existing reports are still available to download in the history below.
+        </p>
+        <div class="upgrade-cta" style="flex-direction:column;gap:var(--s4)">
+          <a href="{{ url_for('pricing') }}" class="btn btn-teal btn-lg">View Pricing &amp; Upgrade</a>
+
+          <!-- Transparent pricing summary — no dark patterns -->
+          <div style="background:var(--bg-soft);border:1px solid var(--rule);border-radius:var(--r-lg);padding:var(--s6);text-align:left;max-width:420px;width:100%">
+            <p style="font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:var(--s4)">Your options</p>
+            <div style="display:flex;flex-direction:column;gap:var(--s4)">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--s4)">
+                <div>
+                  <strong style="font-size:.9375rem;color:var(--ink)">Single Report</strong>
+                  <p style="font-size:.8125rem;color:var(--muted);margin:0">One complete analysis + PDF. No subscription.</p>
+                </div>
+                <a href="{{ url_for('pricing') }}" class="btn btn-secondary btn-sm" style="flex-shrink:0">
+                  {# ── PLUG IN: your one-time price ── #}
+                  From $49
+                </a>
+              </div>
+              <div style="height:1px;background:var(--rule)"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--s4)">
+                <div>
+                  <strong style="font-size:.9375rem;color:var(--ink)">Ongoing Insights</strong>
+                  <p style="font-size:.8125rem;color:var(--muted);margin:0">Unlimited reports + trend tracking. Cancel anytime.</p>
+                </div>
+                <a href="{{ url_for('pricing') }}" class="btn btn-secondary btn-sm" style="flex-shrink:0">
+                  {# ── PLUG IN: your subscription price ── #}
+                  From $99/mo
+                </a>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+
+    <!-- ── EMPTY STATE ───────────────────────────────────── -->
+    {# ── PLUG IN: total_reviews from your view ── #}
+    {% if total_reviews == 0 %}
+    <div class="empty-state-section">
+      <div class="empty-state-card">
+        <span class="empty-icon">📊</span>
+        <h2>No reviews yet</h2>
+        <p class="empty-message">
+          Upload a CSV of client reviews to generate your first analysis.
+          Results appear here within seconds of uploading.
+        </p>
+        <div class="empty-actions">
+          <a href="{{ url_for('upload') }}" class="btn btn-teal btn-lg">
+            <span class="btn-icon">📤</span> Upload CSV File
+          </a>
+        </div>
+        <!-- Preview of what the dashboard will look like -->
+        <div style="margin-top:var(--s10);padding-top:var(--s8);border-top:1px solid var(--rule);text-align:left">
+          <p style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:var(--s4)">Your dashboard will show</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--s4);opacity:.35;pointer-events:none">
+            {% for label in ['Reviews Analyzed','Average Rating','Themes Found'] %}
+            <div style="background:var(--bg-soft);border:1px solid var(--rule);border-radius:var(--r-md);padding:var(--s5)">
+              <div style="font-family:var(--font-serif);font-size:1.75rem;color:var(--ink)">—</div>
+              <div style="font-size:.75rem;color:var(--muted);margin-top:4px">{{ label }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% else %}
+
+    <!-- ═══════════════════════════════════════════════════
+         INSIGHTS (data exists)
+         ═══════════════════════════════════════════════════ -->
+
+    <!-- Overview stats -->
+    <div style="margin-bottom:var(--s10)">
+      <h2 class="section-heading">Overview</h2>
+      <div class="stats-grid">
+        {# ── PLUG IN: total_reviews, avg_rating, themes list from your view ── #}
+        <div class="stat-card">
+          <span class="stat-icon">📝</span>
+          <div>
+            <div class="stat-value">{{ total_reviews }}</div>
+            <div class="stat-label">Reviews Analyzed</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">★</span>
+          <div>
+            <div class="stat-value">{{ "%.2f"|format(avg_rating) }}</div>
+            <div class="stat-label">Average Rating / 5.0</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">🔍</span>
+          <div>
+            <div class="stat-value">{{ themes|length }}</div>
+            <div class="stat-label">Themes Identified</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Themes -->
+    {% if themes %}
+    <div class="feedback-section" style="margin-bottom:var(--s6)">
+      <h2 class="section-heading">Key Themes Across All Feedback</h2>
+      <div class="themes-grid">
+        {# ── PLUG IN: theme objects with .name, .mentions, .percentage ── #}
+        {% for theme in themes %}
+        <div class="theme-card">
+          <h4>{{ theme.name }}</h4>
+          <p>{{ theme.mentions }} mentions · {{ "%.1f"|format(theme.percentage) }}%</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Top praise (preview: 3 shown, more in PDF) -->
+    {% if top_praise %}
+    <div class="feedback-section">
+      <h2 class="section-heading">
+        <span class="heading-icon success">✓</span>
+        Top Positive Feedback
+      </h2>
+      <p style="font-size:.875rem;color:var(--muted);margin-bottom:var(--s5)">
+        Showing 3 of {{ top_praise|length }} positive reviews —
+        the full list is in your PDF report.
+      </p>
+      <div class="reviews-list">
+        {# ── PLUG IN: top_praise list of review objects ── #}
+        {% for review in top_praise[:3] %}
+        <div class="review-card positive">
+          <div class="review-header">
+            <span class="review-rating">{% for i in range(review.rating) %}★{% endfor %}</span>
+            <span class="review-date">{{ review.date }}</span>
+          </div>
+          <div class="review-text">
+            {{ review.review_text[:300] }}{% if review.review_text|length > 300 %}…{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Areas for improvement — preview with paywall nudge for free tier -->
+    {% if top_complaints %}
+    <div class="feedback-section">
+      <h2 class="section-heading">
+        <span class="heading-icon warning">⚠</span>
+        Opportunities for Improvement
+      </h2>
+      <p style="font-size:.875rem;color:var(--muted);margin-bottom:var(--s5)">
+        Showing 3 of {{ top_complaints|length }} critical reviews.
+        The PDF report includes prioritized action plans for each identified theme.
+      </p>
+      <div class="reviews-list">
+        {# ── PLUG IN: top_complaints list of review objects ── #}
+        {% for review in top_complaints[:3] %}
+        <div class="review-card negative">
+          <div class="review-header">
+            <span class="review-rating">{% for i in range(review.rating) %}★{% endfor %}</span>
+            <span class="review-date">{{ review.date }}</span>
+          </div>
+          <div class="review-text">
+            {{ review.review_text[:300] }}{% if review.review_text|length > 300 %}…{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Paywall nudge — shown if trial is exhausted -->
+      {% if upgrade_needed %}
+      <div style="margin-top:var(--s8);background:var(--navy-50);border:1px solid var(--navy-100);border-radius:var(--r-lg);padding:var(--s8);text-align:center">
+        <h3 style="font-size:1.125rem;margin-bottom:var(--s3)">Get the full action plan in your PDF report</h3>
+        <p style="font-size:.9375rem;color:var(--body);max-width:480px;margin:0 auto var(--s6);line-height:1.7">
+          The PDF includes a prioritized action plan for every theme — with specific steps, suggested owners, and recommended timelines.
+          Ready to present at your next partner meeting.
+        </p>
+        <!-- Two upgrade options, clearly labelled, no dark patterns -->
+        <div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:var(--s3)">
+          <a href="{{ url_for('pricing') }}" class="btn btn-teal btn-lg">Upgrade to Download →</a>
+          <a href="{{ url_for('pricing') }}" class="btn btn-outline btn-lg">See all pricing options</a>
+        </div>
+        <p style="font-size:.8125rem;color:var(--muted);margin-top:var(--s4)">
+          Single report from $49 · Subscription from $99/mo · Cancel anytime
+        </p>
+      </div>
+      {% endif %}
+
+    </div>
+    {% endif %}
+
+    {% endif %}{# end total_reviews > 0 #}
+
+
+    <!-- ── Report history (always visible) ──────────────── -->
+    <div class="reports-history-section">
+      <h2 class="section-heading">Report History</h2>
+      {# ── PLUG IN: reports_history list of report objects from DB ── #}
+      {% if reports_history %}
+      <div class="table-mobile-wrap">
+        <table class="reports-history-table">
+          <thead>
+            <tr>
+              <th>Created</th>
+              <th>Reviews</th>
+              <th>Plan</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for report in reports_history %}
+            <tr>
+              <td>{{ report.created_at }}</td>
+              <td>{{ report.total_reviews }}</td>
+              <td>
+                <span class="plan-badge plan-{{ (report.subscription_type_at_creation or 'trial')|lower }}">
+                  {{ report.plan_label }}
+                </span>
+              </td>
+              <td>
+                {# ── PLUG IN: download_report takes report.id ── #}
+                <a href="{{ url_for('download_report', report_id=report.id) }}"
+                   class="btn btn-sm btn-teal"
+                   onclick="this.innerText='Generating…';this.style.pointerEvents='none'">
+                  Download PDF
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p style="color:var(--muted);font-size:.9375rem">
+        No saved reports yet. Upload a CSV to generate your first report.
+      </p>
+      {% endif %}
+    </div>
+
+  </div>
 </section>
 {% endblock %}

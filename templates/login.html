@@ -1,51 +1,68 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Login - Law Firm Insights{% endblock %}
+{% block title %}Sign In — Law Firm Insights{% endblock %}
 
 {% block content %}
-<div class="login-container">
-    <div class="login-card">
-        <h1>Firm Login</h1>
-        <p class="form-description">Sign in to access your feedback analysis dashboard</p>
+<div class="auth-page">
+  <div class="auth-card">
 
-        <form method="POST" action="{{ url_for('login') }}" class="login-form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="form-group">
-                <label for="username">Email address</label>
-                <input type="text" 
-                       id="username" 
-                       name="username" 
-                       class="form-control" 
-                       required 
-                       autofocus
-                       placeholder="you@lawfirm.com">
-            </div>
-
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" 
-                       id="password" 
-                       name="password" 
-                       class="form-control" 
-                       required
-                       placeholder="Enter your password">
-            </div>
-
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary btn-block">Sign In</button>
-            </div>
-        </form>
-
-        <div class="login-footer">
-            <p class="text-center">
-                Don't have an account? 
-                <a href="{{ url_for('register') }}" class="link-primary">Sign up for free</a>
-            </p>
-            <p class="text-center text-muted">
-                <a href="{{ url_for('forgot_password') }}" class="link-muted">Forgot your password?</a>
-            </p>
-            <a href="{{ url_for('marketing_home') }}">← Back to Home</a>
-        </div>
+    <div class="auth-card-header">
+      <div class="auth-logo">⚖️</div>
+      <h1>Log in to Law Firm Insights</h1>
+      <p>Access your feedback dashboard and PDF reports</p>
     </div>
+
+    <form method="POST" action="{{ url_for('login') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label for="username" class="form-label">Email address</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          class="form-control"
+          required
+          autofocus
+          autocomplete="email"
+          placeholder="you@lawfirm.com">
+      </div>
+
+      <div class="form-group">
+        <label for="password" class="form-label">
+          Password
+          <a href="{{ url_for('forgot_password') }}" class="link-muted" style="float:right;font-weight:400;font-size:.8125rem">Forgot password?</a>
+        </label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          class="form-control"
+          required
+          autocomplete="current-password"
+          placeholder="••••••••">
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="loginBtn"
+          onclick="this.disabled=true;this.innerHTML='<span class=\'spinner\'></span> Signing in…'">
+          Sign In
+        </button>
+      </div>
+    </form>
+
+    <div class="auth-footer" style="margin-top:var(--s6)">
+      <p>Don't have an account?
+        <a href="{{ url_for('register') }}" class="link-primary">Start your free trial →</a>
+      </p>
+    </div>
+
+    <div class="auth-trust">
+      <span class="auth-trust-item">256-bit encryption</span>
+      <span class="auth-trust-item">ABA-aligned practices</span>
+      <span class="auth-trust-item">Cancel anytime</span>
+    </div>
+
+  </div>
 </div>
 {% endblock %}

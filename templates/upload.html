@@ -1,170 +1,245 @@
 {% extends "base.html" %}
 
-{% block title %}Upload Reviews - Law Firm Insights<script>
-document.addEventListener('DOMContentLoaded', function () {
-  const form = document.querySelector('.upload-form');
-  if (!form) return;
-  form.addEventListener('submit', function () {
-    const btn = form.querySelector('button[type="submit"]');
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = '⏳ Processing...';
-    }
-  });
-});
-</script>
-{% endblock %}
+{# ── Title block also inlines the submit-button disable script for the <head> ── #}
+{% block title %}Upload Client Reviews — Law Firm Insights{% endblock %}
 
 {% block content %}
 <section class="upload-page">
-    <div class="container">
-        <div class="page-header-internal">
-            <div class="header-content">
-                <h1>Upload Client Reviews</h1>
-                <p class="header-subtitle">Import historical feedback in bulk from a CSV file</p>
-            </div>
-            <div class="header-actions">
-                <a href="{{ url_for('dashboard') }}" class="btn btn-outline">
-                    <span class="btn-icon">←</span> Back to Dashboard
-                </a>
-            </div>
-        </div>
+  <div class="container">
 
-        <!-- Usage Notice -->
-        {% if account_status is defined %}
-        <div class="usage-notice">
-            <div class="usage-info">
-                <span class="usage-icon">📊</span>
-                <span class="usage-text">
-                    <strong>Account Status:</strong> {{ account_status.display }}
-                </span>
-            </div>
-            {% if not can_upload %}
-                <a href="{{ url_for('pricing') }}" class="upgrade-link">No reports remaining · View pricing →</a>
-            {% elif account_status.type == 'trial' %}
-                <a href="{{ url_for('pricing') }}" class="upgrade-link">Upgrade for unlimited reports →</a>
-            {% elif account_status.type == 'onetime' %}
-                <a href="{{ url_for('buy_one_time') }}" class="upgrade-link">Buy additional one-time reports →</a>
-            {% elif account_status.type in ['monthly', 'annual'] %}
-                <span class="upgrade-link">Unlimited reports with your subscription</span>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        <div class="content-grid">
-            <!-- Instructions Card -->
-            <div class="instructions-section">
-                <div class="card">
-                    <h3 class="card-title">CSV Format Requirements</h3>
-                    <p>Your CSV file must contain the following columns in this exact order:</p>
-                    <ul class="requirements-list">
-                        <li>
-                            <strong>date</strong>
-                            <span class="requirement-detail">Date in YYYY-MM-DD format (e.g., 2026-01-15)</span>
-                        </li>
-                        <li>
-                            <strong>rating</strong>
-                            <span class="requirement-detail">Integer from 1 to 5</span>
-                        </li>
-                        <li>
-                            <strong>review_text</strong>
-                            <span class="requirement-detail">The full review content</span>
-                        </li>
-                    </ul>
-                    
-                    <h4 class="subsection-title">Example CSV:</h4>
-                    <pre class="code-block">date,rating,review_text
-2024-01-15,5,"Excellent legal services and professional communication."
-2024-01-14,4,"Very satisfied with the outcome of my case."
-2024-01-13,2,"Response times could be improved."</pre>
-                    
-                    <div class="info-box">
-                        <span class="info-icon">ℹ️</span>
-                        <div class="info-content">
-                            <strong>Important:</strong> The first row must be the header row. 
-                            If your review text contains commas, enclose it in quotes.
-                        </div>
-                    </div>
-
-                    <div class="info-box warning">
-                        <span class="info-icon">⚠️</span>
-                        <div class="info-content">
-                            <strong>Free Trial Limit:</strong> Your free trial includes {{ account_status.trial_limit if account_status and account_status.type == 'trial' else trial_limit | default(3) }} reports. 
-                            Each upload counts as one report toward your limit.
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Upload Form Card -->
-            <div class="upload-section">
-                <div class="card">
-                    <h3 class="card-title">Upload Your CSV File</h3>
-                    <form method="POST" enctype="multipart/form-data" action="{{ url_for('upload') }}" class="upload-form">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <div class="form-group">
-                            <label for="file" class="form-label">Select CSV File</label>
-                            <div class="file-upload-area">
-                                <input type="file" 
-                                       id="file" 
-                                       name="file" 
-                                       class="form-control-file" 
-                                       accept=".csv"
-                                       required>
-                                <div class="file-upload-placeholder">
-                                    <span class="upload-icon">📁</span>
-                                    <span class="upload-text">Choose a CSV file</span>
-                                </div>
-                            </div>
-                            <small class="form-text">Maximum file size: 10MB</small>
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary btn-large btn-block" {% if not can_upload %}disabled{% endif %}>
-                                <span class="btn-icon">📤</span>
-                                {% if can_upload %}
-                                    Upload and Import
-                                {% else %}
-                                    No reports remaining – View pricing
-                                {% endif %}
-                            </button>
-                            <a href="{{ url_for('dashboard') }}" class="btn btn-outline btn-block">Cancel</a>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Help Section -->
-                <div class="help-section">
-                    <div class="help-item">
-                        <span class="help-icon">💡</span>
-                        <div class="help-content">
-                            <strong>Need a sample file?</strong>
-                            <p>A sample CSV file is available in the <code>sample_data/</code> directory for testing.</p>
-                        </div>
-                    </div>
-                    <div class="help-item">
-                        <span class="help-icon">❓</span>
-                        <div class="help-content">
-                            <strong>Having trouble?</strong>
-                            <p>Make sure your CSV matches the required format exactly. Check that dates are in YYYY-MM-DD format and ratings are 1-5.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- ── Page header ──────────────────────────────────── -->
+    <div class="page-header-internal">
+      <div>
+        <h1>Upload Client Reviews</h1>
+        <p class="header-subtitle">Import reviews in bulk · Analysis runs automatically after upload</p>
+      </div>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-outline">← Back to Dashboard</a>
     </div>
+
+    <!-- ── Account / usage notice ──────────────────────── -->
+    {# ── PLUG IN: account_status dict from your Flask view ── #}
+    {% if account_status is defined %}
+    <div class="usage-notice">
+      <div class="usage-info">
+        <span>📊</span>
+        <span>
+          <strong>Account:</strong> {{ account_status.display }}
+        </span>
+      </div>
+      {% if not can_upload %}
+        <a href="{{ url_for('pricing') }}" class="upgrade-link">No reports remaining · View pricing →</a>
+      {% elif account_status.type == 'trial' %}
+        <a href="{{ url_for('pricing') }}" class="upgrade-link">Upgrade for unlimited reports →</a>
+      {% elif account_status.type == 'onetime' %}
+        <a href="{{ url_for('buy_one_time') }}" class="upgrade-link">Buy additional one-time reports →</a>
+      {% elif account_status.type in ['monthly', 'annual'] %}
+        <span style="font-size:.875rem;color:var(--success);font-weight:600">✓ Unlimited reports active</span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- ── Two-column layout ────────────────────────────── -->
+    <div class="content-grid">
+
+      <!-- LEFT: instructions ──────────────────────────── -->
+      <div>
+        <div class="card">
+          <h3 class="card-title">CSV Format Requirements</h3>
+
+          <p style="font-size:.9375rem;color:var(--body);margin-bottom:var(--s5)">
+            Your file must have exactly three columns in this order:
+          </p>
+
+          <ul class="requirements-list">
+            <li>
+              <strong>date</strong>
+              <span class="requirement-detail">YYYY-MM-DD — e.g. 2024-03-15</span>
+            </li>
+            <li>
+              <strong>rating</strong>
+              <span class="requirement-detail">Integer 1–5</span>
+            </li>
+            <li>
+              <strong>review_text</strong>
+              <span class="requirement-detail">Full review text; wrap in quotes if it contains commas</span>
+            </li>
+          </ul>
+
+          <p class="subsection-title" style="margin-top:var(--s6)">Example</p>
+          <pre class="code-block">date,rating,review_text
+2024-01-15,5,"Excellent legal services and clear communication."
+2024-01-14,4,"Very satisfied with the outcome of my case."
+2024-01-13,2,"Response times could be improved significantly."</pre>
+
+          <div class="info-box">
+            <span>ℹ️</span>
+            <div class="info-content">
+              <strong>Header row required.</strong>
+              The first row must be the column headers exactly as shown above.
+            </div>
+          </div>
+
+          <div class="info-box warning" style="margin-top:var(--s3)">
+            <span>⚠️</span>
+            <div class="info-content">
+              {# ── PLUG IN: trial_limit from your view context (default 3) ── #}
+              <strong>Trial limit:</strong>
+              Your free trial includes
+              {{ account_status.trial_limit if account_status and account_status.type == 'trial' else trial_limit|default(3) }}
+              reports. Each upload uses one report credit.
+            </div>
+          </div>
+        </div>
+
+        <!-- What happens next -->
+        <div class="card" style="margin-top:var(--s5)">
+          <h3 class="card-title">What happens after you upload</h3>
+          <div style="display:flex;flex-direction:column;gap:var(--s5)">
+
+            <div style="display:flex;gap:var(--s4);align-items:flex-start">
+              <span style="width:30px;height:30px;background:var(--navy-50);border:1px solid var(--navy-100);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--navy-800);flex-shrink:0">1</span>
+              <div>
+                <strong style="font-size:.9375rem;color:var(--ink);display:block;margin-bottom:2px">We validate and parse your file</strong>
+                <p style="font-size:.875rem;color:var(--muted);margin:0">Malformed rows are skipped with a warning. You'll see exactly how many reviews were imported.</p>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:var(--s4);align-items:flex-start">
+              <span style="width:30px;height:30px;background:var(--navy-50);border:1px solid var(--navy-100);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--navy-800);flex-shrink:0">2</span>
+              <div>
+                <strong style="font-size:.9375rem;color:var(--ink);display:block;margin-bottom:2px">Analysis runs automatically</strong>
+                <p style="font-size:.875rem;color:var(--muted);margin:0">Theme detection and sentiment analysis complete in seconds. No waiting for an email.</p>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:var(--s4);align-items:flex-start">
+              <span style="width:30px;height:30px;background:var(--navy-50);border:1px solid var(--navy-100);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--navy-800);flex-shrink:0">3</span>
+              <div>
+                <strong style="font-size:.9375rem;color:var(--ink);display:block;margin-bottom:2px">You land on your Dashboard</strong>
+                <p style="font-size:.875rem;color:var(--muted);margin:0">View your insights immediately and download your PDF report from there.</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: upload form ──────────────────────────── -->
+      <div>
+        <div class="card">
+          <h3 class="card-title">Upload Your CSV File</h3>
+
+          {# ── action and form fields unchanged from your original ── #}
+          <form method="POST"
+                enctype="multipart/form-data"
+                action="{{ url_for('upload') }}"
+                class="upload-form"
+                id="uploadForm">
+
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-group">
+              <label for="file" class="form-label">Select file</label>
+              <div class="file-upload-area" id="dropZone">
+                <input type="file" id="file" name="file"
+                       class="form-control-file" accept=".csv" required>
+                <div class="file-upload-placeholder" id="fileLabel">
+                  <span class="upload-icon">📁</span>
+                  <span class="upload-text">Click to choose a .csv file, or drag and drop here</span>
+                  <span style="display:block;font-size:.8125rem;color:var(--muted);margin-top:4px">.csv only · max 10 MB</span>
+                </div>
+              </div>
+              <span class="form-text">Maximum file size: 10 MB</span>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit"
+                      id="submitBtn"
+                      class="btn btn-teal btn-lg btn-block"
+                      {% if not can_upload %}disabled{% endif %}>
+                <span class="btn-icon">📤</span>
+                {% if can_upload %}
+                  Upload &amp; Analyze
+                {% else %}
+                  No reports remaining —
+                  <a href="{{ url_for('pricing') }}" style="color:inherit;text-decoration:underline">View pricing</a>
+                {% endif %}
+              </button>
+              <a href="{{ url_for('dashboard') }}" class="btn btn-outline btn-block">Cancel</a>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- Help tips -->
+        <div class="help-section">
+          <div class="help-item">
+            <span class="help-icon">💡</span>
+            <div class="help-content">
+              <strong>Need a sample file?</strong>
+              <p>A ready-to-use sample CSV is in the <code>sample_data/</code> folder of the project repo.</p>
+            </div>
+          </div>
+          <div class="help-item">
+            <span class="help-icon">❓</span>
+            <div class="help-content">
+              <strong>Having trouble?</strong>
+              <p>Check that dates are <code>YYYY-MM-DD</code>, ratings are integers 1–5, and the header row is present with exact column names.</p>
+            </div>
+          </div>
+          <div class="help-item">
+            <span class="help-icon">🔒</span>
+            <div class="help-content">
+              <strong>Do not include client names or case details.</strong>
+              <p>Only date, rating, and anonymized review text are needed. Protecting confidentiality starts with what you upload.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
 </section>
+
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  const form = document.querySelector('.upload-form');
-  if (!form) return;
-  form.addEventListener('submit', function () {
-    const btn = form.querySelector('button[type="submit"]');
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = '⏳ Processing...';
+(() => {
+  const form    = document.getElementById('uploadForm');
+  const btn     = document.getElementById('submitBtn');
+  const input   = document.getElementById('file');
+  const label   = document.getElementById('fileLabel');
+  const zone    = document.getElementById('dropZone');
+
+  // Show selected filename
+  input?.addEventListener('change', () => {
+    const name = input.files[0]?.name;
+    if (name && label) {
+      label.innerHTML =
+        `<span class="upload-icon">📄</span>` +
+        `<span class="upload-text" style="color:var(--ink);font-weight:600">${name}</span>`;
     }
   });
-});
+
+  // Prevent double-submit
+  form?.addEventListener('submit', () => {
+    if (btn && !btn.disabled) {
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Processing…';
+    }
+  });
+
+  // Drag-and-drop highlight
+  zone?.addEventListener('dragover',  e => { e.preventDefault(); zone.style.borderColor = 'var(--navy-600)'; });
+  zone?.addEventListener('dragleave', ()  => { zone.style.borderColor = ''; });
+  zone?.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.style.borderColor = '';
+    if (e.dataTransfer.files.length && input) {
+      const dt = new DataTransfer();
+      dt.items.add(e.dataTransfer.files[0]);
+      input.files = dt.files;
+      input.dispatchEvent(new Event('change'));
+    }
+  });
+})();
 </script>
 {% endblock %}
